@@ -15,3 +15,21 @@ Pour toute question/problème, veuillez vous adresser à l'adresse suivante : [p
 Ce petit projet personnel a pour but de créer un tracker de flotte. Il permettra de suivre les différents mouvements de la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).
 
 ## Installation
+
+Pour installer le projet, il suffit de cloner le dépôt git sur votre machine. Pour cela, il faut utiliser la commande suivante :
+
+```bash
+git clone
+```
+
+## Utilisation
+
+Pour utiliser le projet, il suffit de lancer le fichier `main.py` avec la commande suivante :
+
+```bash
+python main.py
+```
+
+## Contribuer
+
+Pour contribuer au projet, il suffit de faire une pull request sur le dépôt git.

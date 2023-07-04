@@ -278,7 +278,7 @@ class TrackerServer():
     et de les héberger sur un serveur.
     """
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
-
+    LOGO_URL = "Tracker_fleet_YCC/images/fleetytrack_logo_withoutbg.png" # URL du logo
     # PARAMETRES DE LA CARTE
     NAME = 'Flotte_YCC' # nom en haut dans l'onglet du navigateur
     ZOOM = 6 # zoom de la carte par défaut
@@ -664,13 +664,13 @@ class TrackerServer():
                 print(f"-- Le code pays {i} n'est pas dans la liste des pays, merci de l'ajouter --")
 
         print(" >> Création de la box d'informations")
-        HTML = """
+        HTML = f"""
         <!DOCTYPE html>
         <html>
         <head>
         <meta charset="utf-8">
         <title> Flotte YCC</title>
-        <link rel="icon" type="image/png" href="images/logo.png" />
+        <link rel="icon" type="image/png" href="{TrackerServer.LOGO_URL}" />
         </head>
         <!-- on crée un box qui peut être déplacée si on clic dessus et on maintient le clic -->
         <div id="box" style="width: 15%;
@@ -829,5 +829,6 @@ class TrackerServer():
         
 
 if __name__ == "__main__":
-    server = TrackerServer() # on crée simplement un objet TrackerServer
+    server = TrackerServer()
+    server.generate_html()
 
