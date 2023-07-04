@@ -1,7 +1,10 @@
 # Tracker de flotte
 
+<!-- on met le logo en haut de la page -->
 ![Logo](Tracker_fleet_YCC/images/fleetyytack_withbg.png)
-![Logo](Tracker_fleet_YCC/images/yacht-club-classique.png)
+<!-- on met le nom du YCC juste en dessous de façon centré en markdown -->
+![YCC](Tracker_fleet_YCC/images/yacht-club-classique.png){width=50%}
+
 
 ## Propriétaire
 
