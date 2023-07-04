@@ -1,10 +1,10 @@
-# Tracker de flotte du Yacht Club Classique
-<!-- on intègre le logo du YCC -->
-
-<p align="center">
-  <img src="Tracker_fleet_YCC/images/logo.png" width="200" height="200" />
-</p>
-
+---
+documentclass: article
+title: Tracker de flotte
+author: CAU, Pierre
+date: 2023/07/01
+---
+![YCC](Tracker_fleet_YCC/images/yacht-club-classique.png){ width=40% }
 ## Propriétaire
 
 L'intégralité du projet est la propriété du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).
