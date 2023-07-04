@@ -278,7 +278,7 @@ class TrackerServer():
     et de les héberger sur un serveur.
     """
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
-    LOGO_URL = "Tracker_fleet_YCC/images/fleetytrack_logo_withoutbg.png" # URL du logo
+    LOGO_URL = "images/fleetytrack_logo_withbg.png" # URL du logo
     # PARAMETRES DE LA CARTE
     NAME = 'Flotte_YCC' # nom en haut dans l'onglet du navigateur
     ZOOM = 6 # zoom de la carte par défaut
@@ -380,7 +380,8 @@ class TrackerServer():
         icon_targeted_size = TrackerServer.icon_targeted_size # taille des icones quand on clique dessus
         offset = TrackerServer.offset # offset des icones (longitude, latitude)
 
-        
+        TIME_TO_TURN = TrackerServer.TIME_TO_TURN # temps pour tourner le bateau afin de générer l'animation (en secondes)
+
         print("\n >> Création de la carte")
         m = folium.Map(location=TrackerServer.LOCATION, zoom_start=ZOOM,max_zoom=MAX_ZOOM, min_zoom=MIN_ZOOM,control_scale=True,name=NAME)
         # on change le label du fond de carte
@@ -394,7 +395,9 @@ class TrackerServer():
             last_position = datetime.fromtimestamp(row['LAST_POSITION'])
             if pd.isna(row['CAP']) :
                 row['CAP'] = 0 # on met 0 si on a pas de cap par défaut pour l'affichage
-            if row['PAGE_LINK'] is np.nan : # on ajoute un marker sur la carte
+
+            if row['PAGE_LINK'] is np.nan :
+                # on ajoute un marker sur la carte
                 HTML = f"""
                 <div style="width: {WIDTH}px;
                     height: {HEIGHT}px;
@@ -664,13 +667,13 @@ class TrackerServer():
                 print(f"-- Le code pays {i} n'est pas dans la liste des pays, merci de l'ajouter --")
 
         print(" >> Création de la box d'informations")
-        HTML = f"""
+        HTML = """
         <!DOCTYPE html>
         <html>
         <head>
         <meta charset="utf-8">
         <title> Flotte YCC</title>
-        <link rel="icon" type="image/png" href="{TrackerServer.LOGO_URL}" />
+        <link rel="icon" type="image/png" href="Tracker_fleet_YCC/images/fleetytrack_logo_withoutbg.png" />
         </head>
         <!-- on crée un box qui peut être déplacée si on clic dessus et on maintient le clic -->
         <div id="box" style="width: 15%;
@@ -698,22 +701,20 @@ class TrackerServer():
                     margin-top:5px;
                     border-radius: 50%;"/>
             <img src="images/yacht-club-classique.png" alt="YCC" style="width: 95%; height: auto; display: block; margin-left: auto; margin-right: auto; margin-top:5px; margin-bottom:10px">
-            <div style="overflow-y: scroll; height: 200px;"
+            <div id="track_container" style="overflow-y: scroll; height: 200px;"
             padding: 5px;"/>
-            <p style="font-size: 12px;">
-            <ul>
         """
 
-        for index, row in tqdm(tracked_fleet_df.iterrows(), total=tracked_fleet_df.shape[0], desc="Création de la liste des bateaux...",leave=False):
+        for index, row in tracked_fleet_df.iterrows(): # on parcourt tous les bateaux
             assert ZOOM_LEVEL > MIN_ZOOM and ZOOM_LEVEL < MAX_ZOOM, f"Le niveau de zoom doit être compris entre 0 et {MAX_ZOOM-1}"
             HTML += f"""
             <!-- on ajoute le nom du bateau à la liste. Quand on click dessus on déclenche la fonction setView() définie plus bas -->
-            <li>
                 <a class=zoomable2 onclick="printTrack('{row['Nom du bateau']}','{index}'); setView({row['LAT']}, {row['LONG']}, {ZOOM_LEVEL},{index});"   
                 style="
                 color: #000;
                 text-decoration: none;
                 display: block;
+                height: 45px;
                 padding: 5px;
                 border-radius: 5px;
                 border: 1px solid #ddd;
@@ -723,20 +724,40 @@ class TrackerServer():
                 box-shadow: 0 0 2px 1px #ddd;
                 ">
                     <!-- on met le nom du bateau à gauche et le drapeau à droite -->
-                    {row['Nom du bateau']}
+                    <p style="float: left;
+                        margin-top: 8px;
+                        margin-left: 5px;
+                        margin-right: auto;
+                        font-size: 15px;
+                        font-family: Georgia, serif;">{row['Nom du bateau']}</p>
                     <img src="{dictionnary_country[row['COUNTRY_CODE']]}" alt="drapeau" 
-                    style="width: auto; 
-                    height: 20px; 
-                    display: block;
-                    margin-left: auto; 
-                    margin-right: 15px;
-                    float:right;
-                    border-radius: 20%;
-                    "/>
-                    
+                    style="  width: auto;
+                            height: 25px;
+                            display: block;
+                            margin-left: auto;
+                            margin-right: 15px;
+                            float: right;
+                            border-radius: 20%;
+                            margin-top: 5px;
+                            margin-bottom: auto;
+                            ">
+                """
+            if not(pd.isna(row['PAGE_LINK'])): # si le bateau a une page web on ajoute un lien vers cette page : 
+                    HTML += f"""
+                    <img id="is_mmr_{index}" class=is_mrr src="images/logo_mmr.png" alt="logo_mmr"
+                        style="width: auto;
+                            height: 35px;
+                            display: block;
+                            margin-left: auto;
+                            margin-right: 15px;
+                            float: right;
+                            border-radius: 20%;
+                            box-shadow: 0 0 2px 1px #e6e6e6;
+                            margin-top: 0px;"/>
+                        """
+            HTML += f"""
                 </a>
             
-            </li>
                 <script>
                 function printTrack(NAME, index) {{
                     console.log('... Tracking sur ' + NAME +' ('+ index+ ') ...');
@@ -803,20 +824,18 @@ class TrackerServer():
             """
 
         HTML += f"""
-            </ul>
-            </p>
             </div>
-            <p style="font-size: 12px;
+            <p style="font-size: 13px;
             padding : 10px;
             height: 70px;
+            font-family: Georgia, serif;
                 ">
             <b>Nombre de bateaux : </b> {len(tracked_fleet_df)}<br>
             <b>Dernière mise à jour de la carte : </b> {today}<br>
             </p>
         </div>
         </html>
-        """
-
+"""
 
         # on ajoute la box à la carte
         m.get_root().html.add_child(folium.Element(HTML))

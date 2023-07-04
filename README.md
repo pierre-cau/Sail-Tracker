@@ -96,11 +96,7 @@ Le résultat du programme est une carte interactive qui permet de suivre les bat
 - [**https://github.com/pierre-cau/YCC_fleet_tracker/blob/main/Tracker_fleet_YCC/index.html**](https://github.com/pierre-cau/YCC_fleet_tracker/blob/main/Tracker_fleet_YCC/index.html)
 
 
-<!-- on insère la carte html ici -->
-
-<html>
-<iframe src="Tracker_fleet_YCC/index.html" width="100%" height="500px"></iframe>
-</html>
+![Carte interactive]()
 
 ## Sources
 
@@ -109,7 +105,5 @@ Le résultat du programme est une carte interactive qui permet de suivre les bat
 - [**MarineTraffic**](https://www.marinetraffic.com/)
 - [**OpenStreetMap**](https://www.openstreetmap.org/)
 - [**Folium**](https://python-visualization.github.io/folium/)
-- [**Wikipedia**](https://fr.wikipedia.org/wiki/Automatic_Identification_System)
-- [**Wikipedia**](https://fr.wikipedia.org/wiki/Num%C3%A9ro_MMSI)
-- [**Wikipedia**](https://fr.wikipedia.org/wiki/Service_d%27identification_automatique)
-
+- [**Wikipedia AIS**](https://fr.wikipedia.org/wiki/Automatic_Identification_System)
+- [**Wikipedia MMSI**](https://fr.wikipedia.org/wiki/Maritime_Mobile_Service_Identity)
