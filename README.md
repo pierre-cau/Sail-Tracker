@@ -1,4 +1,9 @@
 # Tracker de flotte du Yacht Club Classique
+<!-- on intègre le logo du YCC -->
+
+<p align="center">
+  <img src="Tracker_fleet_YCC/images/logo.png" width="200" height="200" />
+</p>
 
 ## Propriétaire
 
@@ -10,4 +15,4 @@ Pour toute question/problème, veuillez vous adresser à l'adresse suivante : [p
 
 ## Description
 
-Ce petit projet personnel a pour but de créer un tracker de flotte. Il permettra de suivre les différents mouvements de la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).
+Ce petit projet personnel a pour but de créer un tracker de flotte. Il permettra de suivre les différents mouvements de la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).   
