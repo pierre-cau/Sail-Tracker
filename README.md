@@ -1,10 +1,3 @@
----
-documentclass: article
-title: Tracker de flotte
-author: CAU, Pierre
-date: 2023/07/01
----
-
 # Tracker de flotte
 
 ![Logo](Tracker_fleet_YCC/images/fleetyytack_withbg.png)
