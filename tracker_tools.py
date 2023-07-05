@@ -29,6 +29,7 @@ class DataBase():
     url_fleet = 'https://docs.google.com/spreadsheets/d/{0}/gviz/tq?tqx=out:csv&sheet={1}'.format(
         googleSheetId, urllib.parse.quote(worksheetName))
 
+    path_saving_data = 'Tracker_fleet_YCC\\data_ship\\save_{0}.csv'
     TO_INT_COLUMNS = ['MMSI', 'Numero du skipper/armateur']
 
     # Borne de temps de sleep entre chaque requête pour ne pas surcharger les serveur
@@ -60,6 +61,11 @@ class DataBase():
             self.check_page_MMR()
             self.request_update_API()
             self.request_image_links()
+            self._db_updated = True
+
+            date = datetime.now()
+            self._last_update = date.strftime("%d/%m/%Y")
+            self._tracked_fleet_df.to_csv (DataBase.path_saving_data.format(date.strftime("%d_%m_%Y_%H_%M_%S")))
             print("====================================\n")
             
     def filter_mmsi(self):
@@ -241,14 +247,8 @@ class DataBase():
         """
         if pd.isna(url):
             try:
-                print(self.TEMPLATE_IMG_URL_MT.format(ship_id))
-                try:
-                    response = requests.get(self.TEMPLATE_IMG_URL_MT.format(ship_id))
-                except Exception as e:
-                    print(e)
-                print(response.status_code)
+                response = requests.get(self.TEMPLATE_IMG_URL_MT.format(ship_id))
                 if response.status_code == 200:
-                    print('ok')
                     return response.url
                 else :
                     raise Exception(f'Marine Traffic : {response.status_code}')
@@ -276,6 +276,7 @@ class TrackerServer():
     LIEN_GITHUB = 'https://github.com/pierre-cau/YCC_fleet_tracker'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
     LOGO_URL = "images/fleetytrack_logo_withoutbg.png" # URL du logo
+
     # PARAMETRES DE LA CARTE
     NAME = 'Flotte_YCC' # nom en haut dans l'onglet du navigateur
     ZOOM = 6 # zoom de la carte par défaut
@@ -324,7 +325,7 @@ class TrackerServer():
         print(" ----- INITIALISATION SERVEUR ----- ")
         if DataBase != None :
             print(" --> DataBase déjà initialisée")
-            self._db = DataBase()
+            self._db = db
         else :
             self._db = DataBase()
         self._html_file_name = html_file_name
@@ -842,13 +843,13 @@ class TrackerServer():
 
         <!-- on ajoute le logo en bas à droite de la carte -->
         <div style="
-            height: 100px;
+            height: 120px;
             position: absolute;
             margin-right: 5px;
             margin-bottom: 20px;
             background-color: rgba(255, 255, 255, 0.5);
             box-shadow: 0 0 2px 1px #ddd;
-            border-radius: 7%;
+            border-radius: 5%;
             display: block;
             z-index: 1000;
             width: fit-content;
@@ -863,14 +864,10 @@ class TrackerServer():
                     width: auto;
                     float: left;
                     margin-left: 5px;
-                    margin-right: 10px;
-                    height: inherit;">"
-
+                    height: inherit;">
                 <img src="images/fleetytrack_logopowered.png" alt='poweredby' style="
                     float:right;
                     height:inherit;
-                    margin-right:5px;
-                    margin-left:10px;
                     width:auto;
                 ">
         </div>
@@ -892,4 +889,5 @@ class TrackerServer():
 
 if __name__ == "__main__":
     db = DataBase()
-
+    tracker = TrackerServer(db)
+    tracker.generate_html()
