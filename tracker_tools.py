@@ -278,7 +278,7 @@ class TrackerServer():
     et de les héberger sur un serveur.
     """
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
-    LOGO_URL = "images/fleetytrack_logo_withbg.png" # URL du logo
+    LOGO_URL = "images/fleetytrack_logo_withoutbg.png" # URL du logo
     # PARAMETRES DE LA CARTE
     NAME = 'Flotte_YCC' # nom en haut dans l'onglet du navigateur
     ZOOM = 6 # zoom de la carte par défaut
