@@ -42,7 +42,7 @@ class DataBase():
 
     # Borne de temps de sleep entre chaque requête pour- ne pas surcharger les serveur
     minTIME_SLEEP = 0.2
-    maxTIME_SLEEP = 0.3
+    maxTIME_SLEEP = 0.4
     newTIME_SLEEP_MAX = 0.2 # le serveur pour le musée maritime de La Rochelle est plus tolérant
 
     # Template de la réquête API de marinetraffic pour récupérer les données AIS
