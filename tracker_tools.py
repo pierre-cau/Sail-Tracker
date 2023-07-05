@@ -33,7 +33,7 @@ class DataBase():
 
     # Borne de temps de sleep entre chaque requête pour ne pas surcharger les serveur
     minTIME_SLEEP = 0.2
-    maxTIME_SLEEP = 0.4
+    maxTIME_SLEEP = 0.3
     newTIME_SLEEP_MAX = 0.2 # le serveur pour le musée maritime de La Rochelle est plus tolérant
 
     # Template de la réquête API de marinetraffic pour récupérer les données AIS
@@ -46,15 +46,22 @@ class DataBase():
     # URL par défaut pour l'image du bateau
     DEFAULT_BOAT_IMG_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Sail_plan_schooner.svg/1200px-Sail_plan_schooner.svg.png"
 
-    def __init__(self) -> None:
+    def __init__(self,complete_init=True) -> None:
         # une update vaut pour initialisation
-        print("\n  --- INITIALISATION DATABASE ---   ")
-        print("====================================")
-        self.request_update_ggsheet()
-        self.request_update_API()
-        self.request_image_links()
-        print("====================================\n")
-
+        self.updatetDB(complete_update=complete_init)
+        
+    def updatetDB(self,complete_update=True,print_ggsheet_extraction=False):
+        if complete_update :
+            print("\n  --- COMPLETE UPDATE DATABASE ---   ")
+            print("====================================")
+            self.request_update_ggsheet()
+            if print_ggsheet_extraction :
+                print(self._tracked_fleet_df())
+            self.check_page_MMR()
+            self.request_update_API()
+            self.request_image_links()
+            print("====================================\n")
+            
     def filter_mmsi(self):
         """
         Ne récupère que les données des bateaux du YCC possédant un MMSI
@@ -73,7 +80,6 @@ class DataBase():
         self.__df = pd.read_csv(DataBase.url_fleet)
         self.__df[DataBase.TO_INT_COLUMNS] = self.__df[DataBase.TO_INT_COLUMNS].astype('Int64')
         self.filter_mmsi()
-        self.check_page_MMR()
 
     def request_update_API(self, trace_on_log=False):
         """
@@ -102,30 +108,16 @@ class DataBase():
                                  "flag",
                                  "shipname",
                                  "photo",
-                                 "recognized_next_port",
-                                 "reported_eta",
-                                 "reported_destination",
-                                 "current_port",
                                  "imo",
                                  "mmsi",
                                  "ship_type",
-                                 "show_on_live_map",
-                                 "area",
-                                 "area_local",
                                  "lat_of_latest_position",
                                  "lon_of_latest_position",
                                  "status",
-                                 "eni",
                                  "speed",
                                  "course",
                                  "draught",
                                  "navigational_status",
-                                 "year_of_build",
-                                 "length",
-                                 "width",
-                                 "dwt",
-                                 "current_port_unlocode",
-                                 "current_port_country",
                                  ]
                 substring = ""
                 substring = substring.join(
@@ -197,7 +189,7 @@ class DataBase():
         NEW_TIME_SLEEP_MAX = DataBase.newTIME_SLEEP_MAX  # ce serveur est plus tolérant
         assert NEW_TIME_SLEEP_MAX < DataBase.maxTIME_SLEEP, f"NEW_TIME_SLEEP_MAX ({NEW_TIME_SLEEP_MAX}) doit être inférieur à DataBase.maxTIME_SLEEP ({DataBase.maxTIME_SLEEP})"
 
-        print(" --> Check if MMR page exists")
+        print(" --> Checking 'https://museemaritime.larochelle.fr/' for pages")
         for index, row in tqdm(self._tracked_fleet_df.iterrows(), total=self._tracked_fleet_df.shape[0], desc='Search for "MMR" pages...', leave=False):
             # on attend un temps aléatoire entre minTIME_SLEEP et maxTIME_SLEEP (float)
             time.sleep(random.uniform(
@@ -247,14 +239,18 @@ class DataBase():
         """
         Fonction qui récupère l'image d'un bateau à partir de son lien sur le site du musée maritime de La Rochelle par scrapping
         """
-
         if pd.isna(url):
             try:
-                response = requests.get(
-                    TrackerServer.TEMPLATE_IMG_URL_MT.format(ship_id))
+                print(self.TEMPLATE_IMG_URL_MT.format(ship_id))
+                try:
+                    response = requests.get(self.TEMPLATE_IMG_URL_MT.format(ship_id))
+                except Exception as e:
+                    print(e)
+                print(response.status_code)
                 if response.status_code == 200:
+                    print('ok')
                     return response.url
-                else:
+                else :
                     raise Exception(f'Marine Traffic : {response.status_code}')
 
             except Exception as e:  # si on n'a pas d'image sur Marine Traffic ni sur le site du musée maritime de La Rochelle
@@ -277,6 +273,7 @@ class TrackerServer():
     de générer un fichier les fichiers HTML correspondants
     et de les héberger sur un serveur.
     """
+    LIEN_GITHUB = 'https://github.com/pierre-cau/YCC_fleet_tracker'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
     LOGO_URL = "images/fleetytrack_logo_withoutbg.png" # URL du logo
     # PARAMETRES DE LA CARTE
@@ -319,13 +316,17 @@ class TrackerServer():
                             'SE':'Sweden',
                             }
 
-    def __init__(self, html_file_name=DEFAULT_HTML_FILE_NAME):
+    def __init__(self, DataBase=None,html_file_name=DEFAULT_HTML_FILE_NAME):
         """
         Constructeur de la classe TrackerServer.
         """
         # on initialise la base de données
         print(" ----- INITIALISATION SERVEUR ----- ")
-        self._db = DataBase()
+        if DataBase != None :
+            print(" --> DataBase déjà initialisée")
+            self._db = DataBase()
+        else :
+            self._db = DataBase()
         self._html_file_name = html_file_name
 
     def update_bdd_API(self) -> None:
@@ -388,8 +389,9 @@ class TrackerServer():
         folium.TileLayer('cartodbpositron',name="Positron").add_to(m, name='Positron')
         folium.TileLayer('cartodbdark_matter',name="Dark Matter").add_to(m, name='Dark Matter')
 
-        # on génère les marqueurs et popups pour chaque bateau
+        
         print(" >> Création des marqueurs et popups")
+        # MARQUEURS + POPUPS
         for index, row in tqdm(tracked_fleet_df.iterrows(), total=tracked_fleet_df.shape[0], desc="Création des marqueurs et popups...", leave=False):
             ANGLE_TO_TURN = row['CAP'] - POSITION_BOAT_SCHEME # angle à tourner pour avoir le bateau dans le bon sens
             last_position = datetime.fromtimestamp(row['LAST_POSITION'])
@@ -666,7 +668,9 @@ class TrackerServer():
             if i not in dictionnary_country:
                 print(f"-- Le code pays {i} n'est pas dans la liste des pays, merci de l'ajouter --")
 
+        
         print(" >> Création de la box d'informations")
+        # BOX D'INFORMATIONS
         HTML = """
         <!DOCTYPE html>
         <html>
@@ -675,7 +679,6 @@ class TrackerServer():
         <title> Flotte YCC</title>
         <link rel="icon" type="image/png" href="Tracker_fleet_YCC/images/fleetytrack_logo_withoutbg.png" />
         </head>
-        <!-- on crée un box qui peut être déplacée si on clic dessus et on maintient le clic -->
         <div id="box" style="width: 15%;
             position: absolute;
             /* on le met au dessus de la carte */
@@ -701,8 +704,7 @@ class TrackerServer():
                     margin-top:5px;
                     border-radius: 50%;"/>
             <img src="images/yacht-club-classique.png" alt="YCC" style="width: 95%; height: auto; display: block; margin-left: auto; margin-right: auto; margin-top:5px; margin-bottom:10px">
-            <div id="track_container" style="overflow-y: scroll; height: 200px;"
-            padding: 5px;"/>
+            <div id="track_container" style="overflow-y: scroll; height: 200px; width: max-content; margin-left: auto; margin-right: auto; margin-top:5px; margin-bottom:10px">
         """
 
         for index, row in tracked_fleet_df.iterrows(): # on parcourt tous les bateaux
@@ -834,7 +836,48 @@ class TrackerServer():
             <b>Dernière mise à jour de la carte : </b> {today}<br>
             </p>
         </div>
+        """
+        WIDTH = 5
+        HTML+= f"""
+
+        <!-- on ajoute le logo en bas à droite de la carte -->
+        <div style="
+            height: 100px;
+            position: absolute;
+            margin-right: 5px;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 2px 1px #ddd;
+            border-radius: 7%;
+            display: block;
+            z-index: 1000;
+            width: fit-content;
+            bottom: 0;
+            right: 0;" 
+            
+            class="zoomable1" 
+            
+            onclick="window.open({self.LIEN_GITHUB}, '_blank');">
+            
+                <img src="images/fleetytrack_logo_withoutbg.png" alt="logo" style="
+                    width: auto;
+                    float: left;
+                    margin-left: 5px;
+                    margin-right: 10px;
+                    height: inherit;">"
+
+                <img src="images/fleetytrack_logopowered.png" alt='poweredby' style="
+                    float:right;
+                    height:inherit;
+                    margin-right:5px;
+                    margin-left:10px;
+                    width:auto;
+                ">
+        </div>
+
         </html>
+
+        
 """
 
         # on ajoute la box à la carte
@@ -848,6 +891,5 @@ class TrackerServer():
         
 
 if __name__ == "__main__":
-    server = TrackerServer()
-    server.generate_html()
+    db = DataBase()
 
