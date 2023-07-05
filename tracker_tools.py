@@ -15,6 +15,7 @@ from datetime import datetime
 import time
 import random
 import re
+import os
 
 
 class DataBase():
@@ -29,10 +30,17 @@ class DataBase():
     url_fleet = 'https://docs.google.com/spreadsheets/d/{0}/gviz/tq?tqx=out:csv&sheet={1}'.format(
         googleSheetId, urllib.parse.quote(worksheetName))
 
-    path_saving_data = 'Tracker_fleet_YCC\\data_ship\\save_{0}.csv'
+    # Paramètrage des saves locales des données AIS
+    path_saving_data = "Tracker_fleet_YCC/data_ship/"
+    format_path_saving_data = path_saving_data + '/SAVE__{0}.csv'
+    format_print = "%d/%m/%Y %H:%M:%S" # format d'affichage de la date
+    FORMAT_DATE_CSV_FILE = "%d_%m_%Y_%H_%M_%S" # format de la date pour le nom du fichier csv
+    MAX_NUMBER_OF_FILES = 10 # on ne garde que les 10 derniers fichiers de données AIS dans le dossier data_ship
+    
+    # Liste des colonnes à récupérer dans la base de données de contrôle des navires
     TO_INT_COLUMNS = ['MMSI', 'Numero du skipper/armateur']
 
-    # Borne de temps de sleep entre chaque requête pour ne pas surcharger les serveur
+    # Borne de temps de sleep entre chaque requête pour- ne pas surcharger les serveur
     minTIME_SLEEP = 0.2
     maxTIME_SLEEP = 0.3
     newTIME_SLEEP_MAX = 0.2 # le serveur pour le musée maritime de La Rochelle est plus tolérant
@@ -47,26 +55,130 @@ class DataBase():
     # URL par défaut pour l'image du bateau
     DEFAULT_BOAT_IMG_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Sail_plan_schooner.svg/1200px-Sail_plan_schooner.svg.png"
 
-    def __init__(self,complete_init=True) -> None:
-        # une update vaut pour initialisation
-        self.updatetDB(complete_update=complete_init)
+    def __init__(self) -> None:
+        self._db_updated = False # booléen qui indique si la base de données a été mise à jour. Par défaut elle n'est pas à jour
         
+    def run(self,complete_init=False):
+        """
+        Fonction qui lance la mise à jour de la base de données de manière automatique
+        """
+        if self.load_last_save() and not complete_init: # si le chargement de la dernière sauvegarde a réussi
+            self.updatetDB(complete_update=False) # on lance une mise à jour partielle qui ne met à jour que infos qui nous intéressent
+        else: # si le chargement de la dernière sauvegarde a échoué
+            self.updatetDB(complete_update=True)
+
+
+
     def updatetDB(self,complete_update=True,print_ggsheet_extraction=False):
+        
         if complete_update :
             print("\n  --- COMPLETE UPDATE DATABASE ---   ")
             print("====================================")
             self.request_update_ggsheet()
             if print_ggsheet_extraction :
-                print(self._tracked_fleet_df())
-            self.check_page_MMR()
-            self.request_update_API()
+                print(" ----- GGSHEET EXTRACTION -----")
+                print(self.__df)
+            self.check_page_MMR(complete_check=True)
+            self.request_update_API(complete_update=True)
             self.request_image_links()
             self._db_updated = True
-
-            date = datetime.now()
-            self._last_update = date.strftime("%d/%m/%Y")
-            self._tracked_fleet_df.to_csv (DataBase.path_saving_data.format(date.strftime("%d_%m_%Y_%H_%M_%S")))
+            self.saveDB()
+            print(" ► Base de données mise à jour ! ◄")
             print("====================================\n")
+
+        else : # on lance une mise à jour partielle
+            print("\n  --- PARTIAL UPDATE DATABASE ---   ")
+            print("====================================")
+            self._last_update_db = self._tracked_fleet_df
+            self.request_update_ggsheet()
+            if print_ggsheet_extraction :
+                print("                                 ----- GGSHEET EXTRACTION -----")
+                # on affiche les 10 dernières lignes du dataframe
+                print(self.__df.tail(10))
+                print("Affichage des 10 dernières lignes du dataframe")
+                print(self.__df.info())
+            self.check_page_MMR(complete_check=False)
+            self.request_update_API(complete_update=False)
+            self.request_image_links()
+            self._db_updated = True
+            self.saveDB()
+            
+    def load_data(self, date:datetime,print_result=False)-> None:
+        """
+        Charge les données AIS à partir d'un fichier csv
+        :param date: date de la sauvegarde des données AIS
+        """
+        self._last_update = date
+        print("_________________________________________________________")
+        print("► Date de sauvegarde choisie :", date.strftime(DataBase.format_print))
+        print("► Chargement des données AIS...")
+        self._tracked_fleet_df = pd.read_csv(DataBase.format_path_saving_data.format(date.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
+        if print_result:
+            print("                                 ----- DATAFRAME -----")
+            print(self._tracked_fleet_df.tail(10)) # on affiche les 10 dernières lignes du dataframe
+            # on affiche les 10 dernières lignes du dataframe
+            print("Affichage des 10 dernières lignes du dataframe")
+            print(self._tracked_fleet_df.info())
+        # on print le nombre de bateaux 
+        print("\nNombre de bateaux présents sur la sauvegarde : ", len(self._tracked_fleet_df))
+        print("_________________________________________________________")
+
+    def load_last_save(self)-> None:
+        """
+        Charge les données AIS à partir du dernier fichier csv sauvegardé
+
+        :return: True si le chargement a réussi, False sinon
+        """
+        print("              --- LOAD LAST SAVE ---   ")
+        list_files = self.get_list_of_saves()
+        if len(list_files) > 0:
+            # on charge le dernier fichier
+            last_save = max(list_files)
+            self.load_data(last_save)
+            return True
+        else:
+            print("Aucune sauvegarde disponible → Lancement de la mise à jour complète de la base de données")
+            self.updatetDB(complete_update=True)
+            return False
+
+    def load_a_save(self,print_result)-> None:
+        """
+        Charge les données AIS à partir d'un fichier csv en demandant à l'utilisateur de choisir une date
+        """
+
+        list_files = self.get_list_of_saves()
+        print("Liste des sauvegardes disponibles :\n")
+        for i, file in enumerate(list_files):
+            print("{0} : {1}".format(i, file.strftime(DataBase.format_print)))
+        # on demande à l'utilisateur de choisir une date
+        choice = int(input("\nChoisissez le numéro d'une sauvegarde : "))
+        if choice < len(list_files):
+            self.load_data(list_files[choice],print_result)
+        else:
+            print("Choix invalide. L'intervalle de choix est [0, {0}]".format(len(list_files)-1))
+        
+    def get_list_of_saves(self)-> list[datetime]:
+        """
+        Retourne la liste des dates des sauvegardes des données AIS
+        """
+        list_files = os.listdir(DataBase.path_saving_data)
+        # on récupère les dates associées à chaque fichier selon le format de date défini dans la classe
+        list_files = [datetime.strptime(file.split('SAVE__')[1].split('.csv')[0], DataBase.FORMAT_DATE_CSV_FILE) for file in list_files]
+        return list_files
+    
+    def saveDB(self):
+        date = datetime.now()
+        # on récupère la liste des fichiers de données AIS dans le dossier data_ship
+        list_files = self.get_list_of_saves()
+        # si la longueur de la liste est supérieure ou égale à MAX_NUMBER_OF_FILES, on devra supprimer le plus vieux fichier
+        if len(list_files) >= DataBase.MAX_NUMBER_OF_FILES:
+            # on récupère le plus vieux fichier
+            oldest_file = min(list_files)
+            print("--> Le serveur ne peut pas stocker plus de {0} fichiers de données AIS,\nle fichier le plus ancien sera supprimé : {1}".format(
+                DataBase.MAX_NUMBER_OF_FILES, 'SAVE_'+oldest_file.strftime(DataBase.FORMAT_DATE_CSV_FILE)+'.csv'))
+
+        self._last_update = date.strftime(DataBase.FORMAT_DATE_CSV_FILE)
+        self._tracked_fleet_df.to_csv (DataBase.path_saving_data.format(date.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
             
     def filter_mmsi(self):
         """
@@ -87,7 +199,7 @@ class DataBase():
         self.__df[DataBase.TO_INT_COLUMNS] = self.__df[DataBase.TO_INT_COLUMNS].astype('Int64')
         self.filter_mmsi()
 
-    def request_update_API(self, trace_on_log=False):
+    def request_update_API(self, complete_update=True,trace_on_log=False):
         """
         On recherche les données AIS pour chaque bateau de la flotte du YCC
         """
@@ -105,41 +217,81 @@ class DataBase():
         ais = AIS(print_query=False)
         print(" --> Request API for AIS data")
         # on recherche les données AIS pour chaque bateau de la flotte
+        Conversion = {"time_of_latest_position": "LAST_POS",
+                                "flag": "COUNTRY_CODE",
+                                "imo": "SHIP_ID",
+                                "lat_of_latest_position": "LAT",
+                                "lon_of_latest_position": "LONG",
+                                "speed": "SPEED",
+                                "course": "CAP",
+                                }
+        
+        Var_Conversion = {"time_of_latest_position": LAST_POSITION,
+                                "flag": COUNTRY_CODE,
+                                "imo": SHIP_ID,
+                                "lat_of_latest_position": LAT,
+                                "lon_of_latest_position": LONG,
+                                "speed": SPEED,
+                                "course": CAP,
+                                }
+        response_conversion = {"time_of_latest_position": "LAST_POS",
+                                "flag": "CODE2",
+                                "imo": "SHIP_ID",
+                                "lat_of_latest_position": "LAT",
+                                "lon_of_latest_position": "LON",
+                                "speed": "SPEED",
+                                "course": "COURSE",
+                                }
+
+        skipped = {}
+        for key in Conversion.values(): 
+            skipped[key] = 0
+
+        always_updated_columns = ["time_of_latest_position",
+                                "lat_of_latest_position",
+                                "lon_of_latest_position",
+                                "speed",
+                                "course",
+                                ]
+        fixable_columns = ["flag",
+                            "imo",
+                            ]
+        
         for index, row in tqdm(self._tracked_fleet_df.iterrows(), total=self._tracked_fleet_df.shape[0], desc='Recherche des données AIS pour les bateaux de la flotte...',leave=False):
             # on attend un temps aléatoire entre minTIME_SLEEP et maxTIME_SLEEP (float)
             time.sleep(random.uniform(
                 DataBase.minTIME_SLEEP, DataBase.maxTIME_SLEEP))
-            try:
-                wanted_colums = ["time_of_latest_position",
-                                 "flag",
-                                 "shipname",
-                                 "photo",
-                                 "imo",
-                                 "mmsi",
-                                 "ship_type",
-                                 "lat_of_latest_position",
-                                 "lon_of_latest_position",
-                                 "status",
-                                 "speed",
-                                 "course",
-                                 "draught",
-                                 "navigational_status",
-                                 ]
+            try: 
+                wanted_colums = always_updated_columns.copy() + fixable_columns.copy()             
+                # on fait un petit trie
+                if not complete_update :
+                    for column in fixable_columns:
+                        data = self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[f"{column}"]].values[0]
+                        if not pd.isna(data):
+                            skipped[Conversion[f"{column}"]] +=1
+                            wanted_colums.remove(column)
+                            
+
+                    
                 substring = ""
                 substring = substring.join(
                     [wanted_colums[i] + "," for i in range(len(wanted_colums))])
                 str = DataBase.API_TEMPLATE.format(row['MMSI'], substring)
                 reply = ais.get_data_by_url(str)
+                
+
                 if type(reply) == list:
                     response = reply[0]
-                    LONG.append(response['LON'])
-                    LAT.append(response['LAT'])
-                    SPEED.append(response['SPEED'])
-                    LAST_POSITION.append(response['LAST_POS'])
-                    COUNT_PHOTOS.append(response['COUNT_PHOTOS'])
-                    SHIP_ID.append(response['SHIP_ID'])
-                    CAP.append(response['COURSE'])
-                    COUNTRY_CODE.append(response['CODE2'])
+                    for key in always_updated_columns + fixable_columns:
+                        try:
+                            if key not in wanted_colums:
+                                Var_Conversion[key].append(self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[key]].values[0])
+                            else : 
+                                Var_Conversion[key].append(response[response_conversion[key]])
+                        except Exception as e:
+                            print(e)
+                            Var_Conversion[key].append(None)
+
 
                 else:
                     self._tracked_fleet_df = self._tracked_fleet_df.drop(
@@ -153,14 +305,9 @@ class DataBase():
                 self._tracked_fleet_df = self._tracked_fleet_df.drop(
                     index=index)
 
-        self._tracked_fleet_df['LONG'] = LONG
-        self._tracked_fleet_df['LAT'] = LAT
-        self._tracked_fleet_df['SPEED'] = SPEED
-        self._tracked_fleet_df['LAST_POSITION'] = LAST_POSITION
-        self._tracked_fleet_df['COUNT_PHOTOS'] = COUNT_PHOTOS
-        self._tracked_fleet_df['SHIP_ID'] = SHIP_ID
-        self._tracked_fleet_df['CAP'] = CAP
-        self._tracked_fleet_df['COUNTRY_CODE'] = COUNTRY_CODE
+        for key in always_updated_columns + fixable_columns:
+            self._tracked_fleet_df[Conversion[key]] = Var_Conversion[key]
+
 
         self._tracked_fleet_df['LONG'] = self._tracked_fleet_df['LONG'].astype(
             'float64')
@@ -174,17 +321,15 @@ class DataBase():
             'float64')
         self._tracked_fleet_df['COUNTRY_CODE'] = self._tracked_fleet_df['COUNTRY_CODE'].astype(
             'str')
-
-        try:
-            self._tracked_fleet_df['COUNT_PHOTOS'] = self._tracked_fleet_df['COUNT_PHOTOS'].astype(
-                'int64')
-        except:
-            print("→ Erreur lors de la conversion de la colonne COUNT_PHOTOS en int64")
-            pass
+        
         if trace_on_log:
             print(self._tracked_fleet_df)
 
-    def check_page_MMR(self):
+        if not complete_update:
+            for key in skipped.keys():
+                print(f"→ {skipped[key]} bateaux n'ont pas été mis à jour pour la colonne {key}")
+
+    def check_page_MMR(self,complete_check=False):
         """
         Fonction qui pour chaque bateau de la flotte vérifie si une page sur le site du
         Musée Maritime de La Rochelle existe. Si oui, on ajoute l'URL de la page dans la
@@ -196,24 +341,55 @@ class DataBase():
         assert NEW_TIME_SLEEP_MAX < DataBase.maxTIME_SLEEP, f"NEW_TIME_SLEEP_MAX ({NEW_TIME_SLEEP_MAX}) doit être inférieur à DataBase.maxTIME_SLEEP ({DataBase.maxTIME_SLEEP})"
 
         print(" --> Checking 'https://museemaritime.larochelle.fr/' for pages")
-        for index, row in tqdm(self._tracked_fleet_df.iterrows(), total=self._tracked_fleet_df.shape[0], desc='Search for "MMR" pages...', leave=False):
-            # on attend un temps aléatoire entre minTIME_SLEEP et maxTIME_SLEEP (float)
-            time.sleep(random.uniform(
-                DataBase.minTIME_SLEEP, NEW_TIME_SLEEP_MAX))
-            try:
-                # on met en minuscule et on remplace les espaces par des tirets
-                nom = row['Nom du bateau'].lower().replace(" ", "-")
-                str = DataBase.PAGE_URL_TEMPLATE.format(nom)
-                response = requests.get(str)
-                if response.status_code == 200:
-                    PAGE_LINK.append(response.url)
-                else:
-                    PAGE_LINK.append(np.nan)
 
-            except Exception as e:
-                print("→ {0} ({1}) : 'ERREUR → {2}'".format(
-                    row['Nom du bateau'], row['MMSI'], e))
-                PAGE_LINK.append(np.nan)
+        if complete_check : # on check pour tous les bateaux de la flotte
+            for index, row in tqdm(self._tracked_fleet_df.iterrows(), total=self._tracked_fleet_df.shape[0], desc='Search for "MMR" pages...', leave=False):
+                # on attend un temps aléatoire entre minTIME_SLEEP et maxTIME_SLEEP (float)
+                time.sleep(random.uniform(
+                    DataBase.minTIME_SLEEP, NEW_TIME_SLEEP_MAX))
+                try:
+                    # on met en minuscule et on remplace les espaces par des tirets
+                    nom = row['Nom du bateau'].lower().replace(" ", "-")
+                    str = DataBase.PAGE_URL_TEMPLATE.format(nom)
+                    response = requests.get(str)
+                    if response.status_code == 200:
+                        PAGE_LINK.append(response.url)
+                    else:
+                        PAGE_LINK.append(np.nan)
+
+                except Exception as e:
+                    print("→ {0} ({1}) : 'ERREUR → {2}'".format(
+                        row['Nom du bateau'], row['MMSI'], e))
+                    PAGE_LINK.append(np.nan)
+        
+        else : # seulement pour les bateaux qui n'ont pas encore de page MMR
+            skip_count = 0
+            for index, row in tqdm(self._tracked_fleet_df.iterrows(), total=self._tracked_fleet_df.shape[0], desc='Search for "MMR" pages...', leave=False):
+                # on check si le bateau n'a pas déjà une page MMR en passant par son MMSI 
+                page = self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']]['PAGE_LINK'].values[0]
+                if pd.isna(page):
+                        # on attend un temps aléatoire entre minTIME_SLEEP et maxTIME_SLEEP (float)
+                    time.sleep(random.uniform(
+                        DataBase.minTIME_SLEEP, NEW_TIME_SLEEP_MAX))
+                    try:
+                        # on met en minuscule et on remplace les espaces par des tirets
+                        nom = row['Nom du bateau'].lower().replace(" ", "-")
+                        str = DataBase.PAGE_URL_TEMPLATE.format(nom)
+                        response = requests.get(str)
+                        if response.status_code == 200:
+                            PAGE_LINK.append(response.url)
+                        else:
+                            PAGE_LINK.append(np.nan)
+
+                    except Exception as e:
+                        print("→ {0} ({1}) : 'ERREUR → {2}'".format(
+                            row['Nom du bateau'], row['MMSI'], e))
+                        PAGE_LINK.append(np.nan)
+                else :
+                    skip_count += 1
+                    PAGE_LINK.append(page)
+            print(f"        AVERTISSEMENT : {skip_count} bateaux ont une page sur le site du Musée Maritime de La Rochelle. Ces dernières ne seront pas mises à jour.")
+
 
         self._tracked_fleet_df['PAGE_LINK'] = PAGE_LINK
 
@@ -274,6 +450,7 @@ class TrackerServer():
     et de les héberger sur un serveur.
     """
     LIEN_GITHUB = 'https://github.com/pierre-cau/YCC_fleet_tracker'
+    URL_YCC = 'https://www.ycc-voile.fr/'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
     LOGO_URL = "images/fleetytrack_logo_withoutbg.png" # URL du logo
 
@@ -321,40 +498,80 @@ class TrackerServer():
         """
         Constructeur de la classe TrackerServer.
         """
-        # on initialise la base de données
-        print(" ----- INITIALISATION SERVEUR ----- ")
-        if DataBase != None :
-            print(" --> DataBase déjà initialisée")
-            self._db = db
-        else :
-            self._db = DataBase()
-        self._html_file_name = html_file_name
+        self._html_file_name = html_file_name # nom du fichier HTML
 
-    def update_bdd_API(self) -> None:
-        """
-        Fonction qui met à jour la base de données côté API.
-        """
-        self._db.request_update_API()
 
-    def update_bdd_ggsheet(self) -> None:
+    def load_data(self, date:datetime,print_result=False)-> None:
         """
-        Fonction qui met à jour la base de donnée côté ggsheet.
+        Charge les données AIS à partir d'un fichier csv
+        :param date: date de la sauvegarde des données AIS
         """
-        self._db.request_update_ggsheet()
-        self._tracked_fleet_df = self._db.get_tracked_fleet_df()
+        self._last_update = date
+        print("_________________________________________________________")
+        print("► Date de sauvegarde choisie :", date.strftime(DataBase.format_print))
+        print("► Chargement des données AIS...")
+        self._tracked_fleet_df = pd.read_csv(DataBase.format_path_saving_data.format(date.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
+        if print_result:
+            print("                                 ----- DATAFRAME -----")
+            print(self._tracked_fleet_df.tail(10)) # on affiche les 10 dernières lignes du dataframe
+            # on affiche les 10 dernières lignes du dataframe
+            print("Affichage des 10 dernières lignes du dataframe")
+            print(self._tracked_fleet_df.info())
+        # on print le nombre de bateaux 
+        print("\nNombre de bateaux présents sur la sauvegarde : ", len(self._tracked_fleet_df))
+        print("_________________________________________________________")
 
-    def update_images(self) -> None:
+    def load_last_save(self)-> None:
         """
-        Fonction qui met à jour les images des bateaux.
+        Charge les données AIS à partir du dernier fichier csv sauvegardé
+
+        :return: True si le chargement a réussi, False sinon
         """
-        self._db.request_image_links()
+        print("              --- LOAD LAST SAVE ---   ")
+        list_files = self.get_list_of_saves()
+        if len(list_files) > 0:
+            # on charge le dernier fichier
+            last_save = max(list_files)
+            self.load_data(last_save)
+            return True
+        else:
+            print("Aucune sauvegarde disponible → Lancement de la mise à jour complète de la base de données")
+            print("Veuillez patienter générer un objet DataBase pour lancer la mise à jour complète")
+            return False
+
+    def load_a_save(self,print_result)-> None:
+        """
+        Charge les données AIS à partir d'un fichier csv en demandant à l'utilisateur de choisir une date
+        """
+
+        list_files = self.get_list_of_saves()
+        print("Liste des sauvegardes disponibles :\n")
+        for i, file in enumerate(list_files):
+            print("{0} : {1}".format(i, file.strftime(DataBase.format_print)))
+        # on demande à l'utilisateur de choisir une date
+        choice = int(input("\nChoisissez le numéro d'une sauvegarde : "))
+        if choice < len(list_files):
+            self.load_data(list_files[choice],print_result)
+        else:
+            print("Choix invalide. L'intervalle de choix est [0, {0}]".format(len(list_files)-1))
+        
+    def get_list_of_saves(self)-> list[datetime]:
+        """
+        Retourne la liste des dates des sauvegardes des données AIS
+        """
+        list_files = os.listdir(DataBase.path_saving_data)
+        # on récupère les dates associées à chaque fichier selon le format de date défini dans la classe
+        list_files = [datetime.strptime(file.split('SAVE__')[1].split('.csv')[0], DataBase.FORMAT_DATE_CSV_FILE) for file in list_files]
+        return list_files
+    
 
     def generate_html(self) -> None:
         """
         Fonction qui génère le fichier HTML.
         """
-        print("     --> GENERATION HTML <--")
-        tracked_fleet_df = self._db.get_tracked_fleet_df()
+        print("\n\n      --> GENERATION HTML <--")
+        print("--------------------------------------")
+        tracked_fleet_df = self._tracked_fleet_df
 
         # on commence par ranger les bateaux par ordre alphabétique
         tracked_fleet_df = tracked_fleet_df.sort_values(by=['Nom du bateau'])
@@ -672,7 +889,7 @@ class TrackerServer():
         
         print(" >> Création de la box d'informations")
         # BOX D'INFORMATIONS
-        HTML = """
+        HTML = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -680,7 +897,7 @@ class TrackerServer():
         <title> Flotte YCC</title>
         <link rel="icon" type="image/png" href="Tracker_fleet_YCC/images/fleetytrack_logo_withoutbg.png" />
         </head>
-        <div id="box" style="width: 15%;
+        <div id="box" style="width: min-content;
             position: absolute;
             /* on le met au dessus de la carte */
             z-index: 999;
@@ -695,7 +912,7 @@ class TrackerServer():
             background-color: white;
             padding: 5px;
             ">
-            <img onclick="window.open('https://www.yachtclubclassique.com/')"
+            <img onclick="window.open('{TrackerServer.URL_YCC}')"
                 class=zoomable1 src="images/logo.png" alt="logo"
                 style="width: 50%; 
                     height: auto; 
@@ -712,20 +929,7 @@ class TrackerServer():
             assert ZOOM_LEVEL > MIN_ZOOM and ZOOM_LEVEL < MAX_ZOOM, f"Le niveau de zoom doit être compris entre 0 et {MAX_ZOOM-1}"
             HTML += f"""
             <!-- on ajoute le nom du bateau à la liste. Quand on click dessus on déclenche la fonction setView() définie plus bas -->
-                <a class=zoomable2 onclick="printTrack('{row['Nom du bateau']}','{index}'); setView({row['LAT']}, {row['LONG']}, {ZOOM_LEVEL},{index});"   
-                style="
-                color: #000;
-                text-decoration: none;
-                display: block;
-                height: 45px;
-                padding: 5px;
-                border-radius: 5px;
-                border: 1px solid #ddd;
-                margin-bottom: 5px;
-                text-align: left;
-                /* on rajoute une ombre grise */
-                box-shadow: 0 0 2px 1px #ddd;
-                ">
+                <a class="zoomable2 trackerbox-container-item" onclick="printTrack('{row['Nom du bateau']}','{index}'); setView({row['LAT']}, {row['LONG']}, {ZOOM_LEVEL},{index});">
                     <!-- on met le nom du bateau à gauche et le drapeau à droite -->
                     <p style="float: left;
                         margin-top: 8px;
@@ -747,16 +951,7 @@ class TrackerServer():
                 """
             if not(pd.isna(row['PAGE_LINK'])): # si le bateau a une page web on ajoute un lien vers cette page : 
                     HTML += f"""
-                    <img id="is_mmr_{index}" class=is_mrr src="images/logo_mmr.png" alt="logo_mmr"
-                        style="width: auto;
-                            height: 35px;
-                            display: block;
-                            margin-left: auto;
-                            margin-right: 15px;
-                            float: right;
-                            border-radius: 20%;
-                            box-shadow: 0 0 2px 1px #e6e6e6;
-                            margin-top: 0px;"/>
+                    <img id="is_mmr_{index}" class="is_mrr" src="images/logo_mmr.png" alt="logo_mmr"/>
                         """
             HTML += f"""
                 </a>
@@ -828,11 +1023,7 @@ class TrackerServer():
 
         HTML += f"""
             </div>
-            <p style="font-size: 13px;
-            padding : 10px;
-            height: 70px;
-            font-family: Georgia, serif;
-                ">
+            <p class="trackbox-container-footer">
             <b>Nombre de bateaux : </b> {len(tracked_fleet_df)}<br>
             <b>Dernière mise à jour de la carte : </b> {today}<br>
             </p>
@@ -842,24 +1033,7 @@ class TrackerServer():
         HTML+= f"""
 
         <!-- on ajoute le logo en bas à droite de la carte -->
-        <div style="
-            height: 120px;
-            position: absolute;
-            margin-right: 5px;
-            margin-bottom: 20px;
-            background-color: rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 2px 1px #ddd;
-            border-radius: 5%;
-            display: block;
-            z-index: 1000;
-            width: fit-content;
-            bottom: 0;
-            right: 0;" 
-            
-            class="zoomable1" 
-            
-            onclick="window.open({self.LIEN_GITHUB}, '_blank');">
-            
+        <div class="zoomable1 signature" onclick="window.open('{TrackerServer.LIEN_GITHUB}')">
                 <img src="images/fleetytrack_logo_withoutbg.png" alt="logo" style="
                     width: auto;
                     float: left;
@@ -868,10 +1042,112 @@ class TrackerServer():
                 <img src="images/fleetytrack_logopowered.png" alt='poweredby' style="
                     float:right;
                     height:inherit;
-                    width:auto;
-                ">
+                    width:auto;">
         </div>
 
+
+        <style>
+        /* on cible les screen de moins de plus de 600px de large */
+        @media only screen and (min-width: 700px) {{
+            .signature {{
+                height: 120px;
+                position: absolute;
+                margin-right: 5px;
+                margin-bottom: 20px;
+                background-color: rgba(255, 255, 255, 0.5);
+                box-shadow: 0 0 2px 1px #ddd;
+                border-radius: 5%;
+                display: block;
+                z-index: 1000;
+                width: fit-content;
+                bottom: 0;
+                right: 0;
+                }}
+
+            .is_mrr {{
+                 width: auto;
+                 height: 25px;
+                 display: block;
+                 margin-left: auto;
+                 margin-right: 10px;
+                 float: right;
+                 border-radius: 20%;
+                 margin-top: 5%;
+                 margin-bottom: auto;
+                }}
+
+            .trackerbox-container-footer {{
+                font-size: 13px;
+                padding : 10px;
+                height: 70px;
+                font-family: Georgia, serif;
+                }}   
+            .trackerbox-container-item {{
+                color: #000;
+                text-decoration: none;
+                display: block;
+                height: 45px;
+                padding: 5px;
+                border-radius: 5px;
+                border: 1px solid #ddd;
+                margin-bottom: 5px;
+                text-align: left;
+                /* on rajoute une ombre grise */
+                box-shadow: 0 0 2px 1px #ddd;
+                }}        
+            
+        }}
+        @media only screen and (max-width: 700px) {{
+            .signature {{
+                height: 40px;
+                position: absolute;
+                margin-right: 5px;
+                margin-bottom: 20px;
+                background-color: rgba(255, 255, 255, 0.5);
+                box-shadow: 0 0 2px 1px #ddd;
+                border-radius: 5%;
+                display: block;
+                z-index: 1000;
+                width: fit-content;
+                bottom: 0;
+                right: 0;
+                }}
+            .is_mrr {{
+                 width: auto;
+                 height: 25px;
+                 display: block;
+                 margin-left: auto;
+                 margin-right: 10px;
+                 float: right;
+                 border-radius: 20%;
+                 margin-top: 5%;
+                 margin-bottom: auto;
+                }}
+
+            .trackerbox-container-footer {{
+                font-size: 13px;
+                padding : 10px;
+                height: 70px;
+                font-family: Georgia, serif;
+                }}  
+
+            .trackerbox-container-item {{
+                color: #000;
+                text-decoration: none;
+                display: block;
+                height: 45px;
+                padding: 5px;
+                border-radius: 5px;
+                border: 1px solid #ddd;
+                margin-bottom: 5px;
+                text-align: left;
+                /* on rajoute une ombre grise */
+                box-shadow: 0 0 2px 1px #ddd;
+                }}
+            
+        }}
+        </style>
+            
         </html>
 
         
@@ -888,6 +1164,9 @@ class TrackerServer():
         
 
 if __name__ == "__main__":
+
     db = DataBase()
-    tracker = TrackerServer(db)
+    db.run(complete_init=True)
+    tracker = TrackerServer()
+    tracker.load_last_save()
     tracker.generate_html()
