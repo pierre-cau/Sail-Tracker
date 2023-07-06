@@ -435,7 +435,7 @@ class TrackerServer():
     LIEN_SITE = 'https://pierre-cau.github.io/FleetyTracker/'
     # on récupère le répertoir courant
     LOCAL_PATH_TO_BACKSAVE = os.path.dirname(os.path.abspath(__file__)) + "\Tracker_fleet_YCC"
-    LOCAL_PATH_TO_SITE = os.path.dirname(os.path.abspath(__file__)) + "\Published_site"
+    LOCAL_PATH_TO_SITE = os.path.dirname(os.path.abspath(__file__)) + "\..\FleetyTracker"
     LIEN_GITHUB = 'https://github.com/pierre-cau/FleetyTracker'
     URL_YCC = 'https://www.yachtclubclassique.com/'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
