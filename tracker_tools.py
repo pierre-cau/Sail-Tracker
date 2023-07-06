@@ -31,19 +31,22 @@ class DataBase():
         googleSheetId, urllib.parse.quote(worksheetName))
 
     # Paramètrage des saves locales des données AIS
-    path_saving_data = "Tracker_fleet_YCC/data_ship/"
+    path_saving_data = "Tracker_fleet_YCC/DATA_SAVES/"
     format_path_saving_data = path_saving_data + '/SAVE__{0}.csv'
     format_print = "%d/%m/%Y %H:%M:%S" # format d'affichage de la date
     FORMAT_DATE_CSV_FILE = "%d_%m_%Y_%H_%M_%S" # format de la date pour le nom du fichier csv
-    MAX_NUMBER_OF_FILES = 10 # on ne garde que les 10 derniers fichiers de données AIS dans le dossier data_ship
+    MAX_NUMBER_OF_FILES = 5 # on ne garde que les n derniers fichiers de données AIS dans le dossier data_ship
     
     # Liste des colonnes à récupérer dans la base de données de contrôle des navires
     TO_INT_COLUMNS = ['MMSI', 'Numero du skipper/armateur']
 
-    # Borne de temps de sleep entre chaque requête pour- ne pas surcharger les serveur
+    # Borne de temps de sleep entre chaque requête pour- ne pas surcharger les serveurs
     minTIME_SLEEP = 0.2
     maxTIME_SLEEP = 0.4
     newTIME_SLEEP_MAX = 0.2 # le serveur pour le musée maritime de La Rochelle est plus tolérant
+
+    num_retries = 8 # nombre de tentatives de requêtes avant de passer à la suivante pour l'API
+    seconds_wait = 5 # nombre de secondes à attendre avant de relancer une requête pour l'API
 
     # Template de la réquête API de marinetraffic pour récupérer les données AIS
     API_TEMPLATE = "https://www.marinetraffic.com/en/data/?asset_type=vessels&columns={1}&mmsi|eq|mmsi={0}"
@@ -66,8 +69,6 @@ class DataBase():
             self.updatetDB(complete_update=False) # on lance une mise à jour partielle qui ne met à jour que infos qui nous intéressent
         else: # si le chargement de la dernière sauvegarde a échoué
             self.updatetDB(complete_update=True)
-
-
 
     def updatetDB(self,complete_update=True,print_ggsheet_extraction=False):
         
@@ -175,11 +176,20 @@ class DataBase():
             # on récupère le plus vieux fichier
             oldest_file = min(list_files)
             print("--> Le serveur ne peut pas stocker plus de {0} fichiers de données AIS,\nle fichier le plus ancien sera supprimé : {1}".format(
-                DataBase.MAX_NUMBER_OF_FILES, 'save__'+oldest_file.strftime(DataBase.FORMAT_DATE_CSV_FILE)+'.csv'))
+                DataBase.MAX_NUMBER_OF_FILES, 'SAVE__'+oldest_file.strftime(DataBase.FORMAT_DATE_CSV_FILE)+'.csv'))
+            # on supprime le fichier le plus ancien
+            os.remove(DataBase.format_path_saving_data.format(oldest_file.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
 
         self._last_update = date.strftime(DataBase.FORMAT_DATE_CSV_FILE)
-        self._tracked_fleet_df.to_csv (DataBase.path_saving_data.format(date.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
-            
+        # on test si on a accès au dossier data_ship
+        if os.path.isdir(DataBase.path_saving_data):
+            # on sauvegarde le dataframe dans un fichier csv 
+            self._tracked_fleet_df.to_csv(DataBase.format_path_saving_data.format(date.strftime(DataBase.FORMAT_DATE_CSV_FILE)), index=False)
+
+
+        else :
+            print("Le dossier data_ship n'existe pas ou n'est pas accessible")
+                   
     def filter_mmsi(self):
         """
         Ne récupère que les données des bateaux du YCC possédant un MMSI
@@ -213,34 +223,9 @@ class DataBase():
         CAP = []
         COUNTRY_CODE = []
 
-        # on crée un objet AIS
-        ais = AIS(print_query=False)
         print(" --> Request API for AIS data")
         # on recherche les données AIS pour chaque bateau de la flotte
-        Conversion = {"time_of_latest_position": "LAST_POS",
-                                "flag": "COUNTRY_CODE",
-                                "imo": "SHIP_ID",
-                                "lat_of_latest_position": "LAT",
-                                "lon_of_latest_position": "LONG",
-                                "speed": "SPEED",
-                                "course": "CAP",
-                                }
-        
-        Var_Conversion = [[] for k in range(len(Conversion.keys()))]
-
-        response_conversion = {"time_of_latest_position": "LAST_POS",
-                                "flag": "CODE2",
-                                "imo": "SHIP_ID",
-                                "lat_of_latest_position": "LAT",
-                                "lon_of_latest_position": "LON",
-                                "speed": "SPEED",
-                                "course": "COURSE",
-                                }
-
-        skipped = {}
-        for key in Conversion.values(): 
-            skipped[key] = 0
-
+ 
         always_updated_columns = ["time_of_latest_position",
                                 "lat_of_latest_position",
                                 "lon_of_latest_position",
@@ -251,56 +236,64 @@ class DataBase():
                             "imo",
                             ]
         
+        Conversion = {"flag":"COUNTRY_CODE",
+                    "imo":"SHIP_ID",
+                    "time_of_latest_position":"LAST_POSITION",
+                    "lat_of_latest_position":"LAT",
+                    "lon_of_latest_position":"LONG",
+                    "speed":"SPEED",
+                    "course":"CAP",
+                    }
+        response_conversion = {"flag":"CODE2",
+                            "imo":"SHIP_ID",
+                            "time_of_latest_position":"LAST_POS",
+                            "lat_of_latest_position":"LAT",
+                            "lon_of_latest_position":"LON",
+                            "speed":"SPEED",
+                            "course":"COURSE",
+                            }
+        
+        skipped = {}
+        for column in fixable_columns:
+            skipped[column] = 0
+        
         for index, row in tqdm(self._tracked_fleet_df.iterrows(), total=self._tracked_fleet_df.shape[0], desc='Recherche des données AIS pour les bateaux de la flotte...',leave=False):
             # on attend un temps aléatoire entre minTIME_SLEEP et maxTIME_SLEEP (float)
-            time.sleep(random.uniform(
-                DataBase.minTIME_SLEEP, DataBase.maxTIME_SLEEP))
-            try: 
-                wanted_colums = always_updated_columns.copy() + fixable_columns.copy()             
-                # on fait un petit trie
-                if not complete_update :
-                    for column in fixable_columns:
-                        data = self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[f"{column}"]].values[0]
-                        if not pd.isna(data):
-                            skipped[Conversion[f"{column}"]] +=1
-                            wanted_colums.remove(column)
-                            
+            time.sleep(random.uniform(DataBase.minTIME_SLEEP, DataBase.maxTIME_SLEEP))
+            wanted_colums = always_updated_columns
+            try:
+                # on récupère les données AIS du bateau
+                for index,column in enumerate(fixable_columns):
+                    if complete_update:
+                        wanted_column = always_updated_columns + fixable_columns
+                    elif not(complete_update) and not (pd.isna(self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[f"{column}"]].values[0])):
+                        wanted_colums.append(column)
+                    else : 
+                        skipped[column] += 1
 
-                    
-                substring = ""
-                substring = substring.join(
-                    [wanted_colums[i] + "," for i in range(len(wanted_colums))])
-                str = DataBase.API_TEMPLATE.format(row['MMSI'], substring)
-                reply = ais.get_data_by_url(str)
+                ais = AIS(verbose=False,
+                        columns=wanted_colums,
+                        return_df=False,
+                        return_total_count=False,
+                        seconds_wait=DataBase.seconds_wait,
+                        num_retries = DataBase.num_retries,
+                    )
+                response = ais.get_location(row['MMSI'])
+
+                for index, column in enumerate(wanted_colums):
+                    self._tracked_fleet_df.loc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f"{column}"]] = response[0][response_conversion[f"{column}"]]
+                for index,column in enumerate([column for column in fixable_columns if column not in wanted_colums]):
+                    self._tracked_fleet_df.loc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f"{column}"]] = self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f"{column}"]]
+
                 
-
-                if type(reply) == list:
-                    response = reply[0]
-                    for index, key in enumerate(always_updated_columns + fixable_columns):
-                        try:
-                            if key not in wanted_colums:
-                               Var_Conversion[index].append(self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[f"{key}"]].values[0])
-                            else : 
-                                Var_Conversion[index].append(response[response_conversion[key]])
-                        except Exception as e:
-                            print(e)
-                            Var_Conversion[key].append(None)
-
-
-                else:
-                    self._tracked_fleet_df = self._tracked_fleet_df.drop(
-                        index=index)
-                    print("→ {0} ({1}) : 'UNFOUND'\nVeuillez vérifier le numéro MMSI ou augmenter le temps de recherche !".format(
-                        row['Nom du bateau'], row['MMSI']))
             except Exception as e:
-                # on print l'erreur et son explication
+                # on print l'erreur et son explication0
                 print("→ {0} ({1}) : 'UNFOUND → {2}'".format(
                     row['Nom du bateau'], row['MMSI'], e))
-                self._tracked_fleet_df = self._tracked_fleet_df.drop(
-                    index=index)
-
-        for index,key in enumerate(always_updated_columns + fixable_columns):
-            self._tracked_fleet_df[Conversion[key]] = Var_Conversion[index]
+                # on récupère l'index à supprimer
+                index_to_drop = self._tracked_fleet_df[self._tracked_fleet_df['MMSI'] == row['MMSI']].index
+                # on supprime la ligne
+                self._tracked_fleet_df.drop(index_to_drop, inplace=True)
 
 
         self._tracked_fleet_df['LONG'] = self._tracked_fleet_df['LONG'].astype(
@@ -313,15 +306,11 @@ class DataBase():
             'int64')
         self._tracked_fleet_df['CAP'] = self._tracked_fleet_df['CAP'].astype(
             'float64')
-        self._tracked_fleet_df['COUNTRY_CODE'] = self._tracked_fleet_df['COUNTRY_CODE'].astype(
+        self._tracked_fleet_df['COUNTRY_C3ODE'] = self._tracked_fleet_df['COUNTRY_CODE'].astype(
             'str')
         
         if trace_on_log:
             print(self._tracked_fleet_df)
-
-        if not complete_update:
-            for key in skipped.keys():
-                print(f"→ {skipped[key]} bateaux n'ont pas été mis à jour pour la colonne {key}")
 
     def check_page_MMR(self,complete_check=False):
         """
@@ -360,8 +349,8 @@ class DataBase():
             skip_count = 0
             for index, row in tqdm(self._tracked_fleet_df.iterrows(), total=self._tracked_fleet_df.shape[0], desc='Search for "MMR" pages...', leave=False):
                 # on check si le bateau n'a pas déjà une page MMR en passant par son MMSI 
-                page = self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']]['PAGE_LINK'].values[0]
-                if pd.isna(page):
+                page = self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']]['PAGE_LINK']
+                if page.empty:
                         # on attend un temps aléatoire entre minTIME_SLEEP et maxTIME_SLEEP (float)
                     time.sleep(random.uniform(
                         DataBase.minTIME_SLEEP, NEW_TIME_SLEEP_MAX))
@@ -381,7 +370,7 @@ class DataBase():
                         PAGE_LINK.append(np.nan)
                 else :
                     skip_count += 1
-                    PAGE_LINK.append(page)
+                    PAGE_LINK.append(page.values[0])
             print(f"        AVERTISSEMENT : {skip_count} bateaux ont une page sur le site du Musée Maritime de La Rochelle. Ces dernières ne seront pas mises à jour.")
 
 
@@ -443,10 +432,19 @@ class TrackerServer():
     de générer un fichier les fichiers HTML correspondants
     et de les héberger sur un serveur.
     """
-    LIEN_GITHUB = 'https://github.com/pierre-cau/YCC_fleet_tracker'
+    LIEN_SITE = 'https://pierre-cau.github.io/FleetyTracker/'
+    # on récupère le répertoir courant
+    LOCAL_PATH_TO_BACKSAVE = os.path.dirname(os.path.abspath(__file__)) + "\Tracker_fleet_YCC"
+    LOCAL_PATH_TO_SITE = os.path.dirname(os.path.abspath(__file__)) + "\Published_site"
+    LIEN_GITHUB = 'https://github.com/pierre-cau/FleetyTracker'
     URL_YCC = 'https://www.yachtclubclassique.com/'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
-    LOGO_URL = "images/fleetytrack_logo_withoutbg.png" # URL du logo
+    LOGO_URL = "images/fleetytrack_logo_withbg.png" # URL du logo
+    EMAIL = "pcaupro@gmail.com" # email de contact
+    USERNAME = "pierre-cau" # username du compte github
+    REMOTE_NAME = "FleetyTracker" # nom du repo github
+    BRANCH_NAME = "main" # nom de la branche github
+    GIT_URL = "https://github.com/pierre-cau/FleetyTracker.git" # URL du repo github
 
     # PARAMETRES DE LA CARTE
     NAME = 'FleetyTrack' # nom en haut dans l'onglet du navigateur
@@ -493,7 +491,6 @@ class TrackerServer():
         Constructeur de la classe TrackerServer.
         """
         self._html_file_name = html_file_name # nom du fichier HTML
-
 
     def load_data(self, date:datetime,print_result=False)-> None:
         """
@@ -1154,10 +1151,71 @@ class TrackerServer():
         m.save("Tracker_fleet_YCC/"+self._html_file_name)
         print("\n... Carte sauvegardée ...")
         print("--------------------------------------\n")
-        
+    
+    def config_git(self):
+        """Configure le git pour pouvoir push le site sur le serveur
+        """
+        print("\n------------ CONFIG GIT ------------------")
+        # on se place dans le dossier et on configure le mail et le nom
+
+        # on retire le remote site si il existe
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE}"
+        print(COMMANDE)
+        os.system(COMMANDE)
+
+        COMMANDE = f"git remote rm {TrackerServer.REMOTE_NAME}"
+        print(COMMANDE)
+        os.system(COMMANDE)
+
+        # on ajoute le remote site
+        COMMANDE = f"git remote add {TrackerServer.REMOTE_NAME} {TrackerServer.GIT_URL}"
+        print(COMMANDE)
+        os.system(COMMANDE)
+        print("--------------------------------------\n")
+        return self
+
+    def publish_site(self)-> str:
+        """Publie le site sur le serveur
+        Returns:
+            str: [lien du site]
+        """
+
+        # on fetch les fichiers du serveur
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE}" 
+        print(COMMANDE)
+        os.system(COMMANDE)
+
+        COMMANDE = f"git fetch {TrackerServer.REMOTE_NAME}"
+        print(COMMANDE)
+        os.system(COMMANDE)
+
+        # on copie colle l'ensemble des fichiers sauvegardés dans le dossier de copie du site web 'Tracker_fleet_YCC' pour 
+        # le mettre dans le dossier 'Publisehd_site' qui est le dossier du site web
+        COMMANDE = f"copy {TrackerServer.LOCAL_PATH_TO_BACKSAVE}\* {TrackerServer.LOCAL_PATH_TO_SITE} /Y"
+        print(COMMANDE)
+        os.system(COMMANDE)
+
+        # on lance la commande git add pour ajouter les fichiers au commit
+        COMMANDE = f"git add ."
+        print(COMMANDE)
+        os.system(COMMANDE)
+
+        # on lance la commande git commit pour commit les fichiers
+        COMMANDE = f"git commit -m 'Update_{datetime.now().strftime('%d_%m_%Y_%H-%M_%S')}'"
+        print(COMMANDE)
+        os.system(COMMANDE)
+
+
+        # on lance la commande git push pour push les fichiers
+        COMMANDE = f"git push {TrackerServer.REMOTE_NAME} {TrackerServer.BRANCH_NAME}"
+        print(COMMANDE)
+        os.system(COMMANDE)
+        print("\n--------------------------------------")
+        print(f">>> Site publié à l'adresse : {TrackerServer.LIEN_SITE} <<<")
+        print("--------------------------------------\n")
+
 
 if __name__ == "__main__":
 
-    db = DataBase()
-    db.load_a_save(print_result=False)
-    db.saveDB()
+    TrackerServer().config_git().publish_site()
+
