@@ -175,7 +175,7 @@ class DataBase():
             # on récupère le plus vieux fichier
             oldest_file = min(list_files)
             print("--> Le serveur ne peut pas stocker plus de {0} fichiers de données AIS,\nle fichier le plus ancien sera supprimé : {1}".format(
-                DataBase.MAX_NUMBER_OF_FILES, 'SAVE_'+oldest_file.strftime(DataBase.FORMAT_DATE_CSV_FILE)+'.csv'))
+                DataBase.MAX_NUMBER_OF_FILES, 'save__'+oldest_file.strftime(DataBase.FORMAT_DATE_CSV_FILE)+'.csv'))
 
         self._last_update = date.strftime(DataBase.FORMAT_DATE_CSV_FILE)
         self._tracked_fleet_df.to_csv (DataBase.path_saving_data.format(date.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
@@ -226,14 +226,8 @@ class DataBase():
                                 "course": "CAP",
                                 }
         
-        Var_Conversion = {"time_of_latest_position": LAST_POSITION,
-                                "flag": COUNTRY_CODE,
-                                "imo": SHIP_ID,
-                                "lat_of_latest_position": LAT,
-                                "lon_of_latest_position": LONG,
-                                "speed": SPEED,
-                                "course": CAP,
-                                }
+        Var_Conversion = [[] for k in range(len(Conversion.keys()))]
+
         response_conversion = {"time_of_latest_position": "LAST_POS",
                                 "flag": "CODE2",
                                 "imo": "SHIP_ID",
@@ -282,12 +276,12 @@ class DataBase():
 
                 if type(reply) == list:
                     response = reply[0]
-                    for key in always_updated_columns + fixable_columns:
+                    for index, key in enumerate(always_updated_columns + fixable_columns):
                         try:
                             if key not in wanted_colums:
-                                Var_Conversion[key].append(self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[key]].values[0])
+                               Var_Conversion[index].append(self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[f"{key}"]].values[0])
                             else : 
-                                Var_Conversion[key].append(response[response_conversion[key]])
+                                Var_Conversion[index].append(response[response_conversion[key]])
                         except Exception as e:
                             print(e)
                             Var_Conversion[key].append(None)
@@ -305,8 +299,8 @@ class DataBase():
                 self._tracked_fleet_df = self._tracked_fleet_df.drop(
                     index=index)
 
-        for key in always_updated_columns + fixable_columns:
-            self._tracked_fleet_df[Conversion[key]] = Var_Conversion[key]
+        for index,key in enumerate(always_updated_columns + fixable_columns):
+            self._tracked_fleet_df[Conversion[key]] = Var_Conversion[index]
 
 
         self._tracked_fleet_df['LONG'] = self._tracked_fleet_df['LONG'].astype(
@@ -450,12 +444,12 @@ class TrackerServer():
     et de les héberger sur un serveur.
     """
     LIEN_GITHUB = 'https://github.com/pierre-cau/YCC_fleet_tracker'
-    URL_YCC = 'https://www.ycc-voile.fr/'
+    URL_YCC = 'https://www.yachtclubclassique.com/'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
     LOGO_URL = "images/fleetytrack_logo_withoutbg.png" # URL du logo
 
     # PARAMETRES DE LA CARTE
-    NAME = 'Flotte_YCC' # nom en haut dans l'onglet du navigateur
+    NAME = 'FleetyTrack' # nom en haut dans l'onglet du navigateur
     ZOOM = 6 # zoom de la carte par défaut
     MAX_ZOOM = 25 # zoom max
     MIN_ZOOM = 3 # zoom min
@@ -562,8 +556,7 @@ class TrackerServer():
         list_files = os.listdir(DataBase.path_saving_data)
         # on récupère les dates associées à chaque fichier selon le format de date défini dans la classe
         list_files = [datetime.strptime(file.split('SAVE__')[1].split('.csv')[0], DataBase.FORMAT_DATE_CSV_FILE) for file in list_files]
-        return list_files
-    
+        return list_files  
 
     def generate_html(self) -> None:
         """
@@ -894,7 +887,7 @@ class TrackerServer():
         <html>
         <head>
         <meta charset="utf-8">
-        <title> Flotte YCC</title>
+        <title>{TrackerServer.NAME}</title>
         <link rel="icon" type="image/png" href="Tracker_fleet_YCC/images/fleetytrack_logo_withoutbg.png" />
         </head>
         <div id="box" style="width: min-content;
@@ -1166,7 +1159,5 @@ class TrackerServer():
 if __name__ == "__main__":
 
     db = DataBase()
-    db.run(complete_init=True)
-    tracker = TrackerServer()
-    tracker.load_last_save()
-    tracker.generate_html()
+    db.load_a_save(print_result=False)
+    db.saveDB()
