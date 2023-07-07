@@ -434,8 +434,8 @@ class TrackerServer():
     """
     LIEN_SITE = 'https://pierre-cau.github.io/FleetyTracker/'
     # on récupère le répertoir courant
-    LOCAL_PATH_TO_BACKSAVE = os.path.dirname(os.path.abspath(__file__)) + "\Tracker_fleet_YCC"
-    LOCAL_PATH_TO_SITE = os.path.dirname(os.path.abspath(__file__)) + "\Published_site"
+    LOCAL_PATH_TO_BACKUP = os.path.dirname(os.path.abspath(__file__)) + "\Tracker_fleet_YCC"
+    LOCAL_PATH_TO_SITE = os.path.dirname(os.path.abspath(__file__)) + "\..\FLeetyTracker"
     LIEN_GITHUB = 'https://github.com/pierre-cau/FleetyTracker'
     URL_YCC = 'https://www.yachtclubclassique.com/'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
@@ -1156,21 +1156,28 @@ class TrackerServer():
         """Configure le git pour pouvoir push le site sur le serveur
         """
         print("\n------------ CONFIG GIT ------------------")
-        # on se place dans le dossier et on configure le mail et le nom
-
-        # on retire le remote site si il existe
-        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE}"
-        print(COMMANDE)
+        prefix = ">>> "
+        
+        # on supprime le remote site si il existe
+        COMMANDE = f"git remote rm {TrackerServer.REMOTE_NAME}"
+        print(prefix+COMMANDE)
         os.system(COMMANDE)
 
-        COMMANDE = f"git remote rm {TrackerServer.REMOTE_NAME}"
-        print(COMMANDE)
+        COMMANDE = f"git remote -v"
+        print(prefix+COMMANDE)
+        print("")
         os.system(COMMANDE)
 
         # on ajoute le remote site
         COMMANDE = f"git remote add {TrackerServer.REMOTE_NAME} {TrackerServer.GIT_URL}"
-        print(COMMANDE)
+        print("\n"+prefix+COMMANDE)
         os.system(COMMANDE)
+
+        COMMANDE = f"git remote -v"
+        print(prefix+COMMANDE)
+        print("")
+        os.system(COMMANDE)
+
         print("--------------------------------------\n")
         return self
 
@@ -1179,37 +1186,55 @@ class TrackerServer():
         Returns:
             str: [lien du site]
         """
-
-        # on fetch les fichiers du serveur
-        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE}" 
-        print(COMMANDE)
+        print("\n------------ PUBLISH SITE ------------------")
+        prefix = "\n>>> "
+        # on init un dépot git
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git init"
+        print(prefix+COMMANDE)
         os.system(COMMANDE)
 
-        COMMANDE = f"git fetch {TrackerServer.REMOTE_NAME}"
-        print(COMMANDE)
+        # on se met dans la branche
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git checkout {TrackerServer.BRANCH_NAME}"
+        print(prefix+COMMANDE)
         os.system(COMMANDE)
 
-        # on copie colle l'ensemble des fichiers sauvegardés dans le dossier de copie du site web 'Tracker_fleet_YCC' pour 
-        # le mettre dans le dossier 'Publisehd_site' qui est le dossier du site web
-        COMMANDE = f"copy {TrackerServer.LOCAL_PATH_TO_BACKSAVE}\* {TrackerServer.LOCAL_PATH_TO_SITE} /Y"
-        print(COMMANDE)
+        # on print le status du dépot git
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git status"
+        print(prefix+COMMANDE)
         os.system(COMMANDE)
 
-        # on lance la commande git add pour ajouter les fichiers au commit
-        COMMANDE = f"git add ."
-        print(COMMANDE)
+        # on print les logs du dépot git
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git log"
+        print(prefix+COMMANDE)
         os.system(COMMANDE)
 
-        # on lance la commande git commit pour commit les fichiers
-        COMMANDE = f"git commit -m 'Update_{datetime.now().strftime('%d_%m_%Y_%H-%M_%S')}'"
-        print(COMMANDE)
+        
+        # on supprime tous les fichiers et dossiers présents dans le dossier du dépot git
+        COMMANDE = f'cd {TrackerServer.LOCAL_PATH_TO_SITE} && del /f /q "index.html" && del /f /q "README.md" && del /f /q "LICENSE" && rmdir /s /q "images" && rmdir /s /q "DATA_SAVES"'
+        print(prefix+COMMANDE)
         os.system(COMMANDE)
 
-
-        # on lance la commande git push pour push les fichiers
-        COMMANDE = f"git push {TrackerServer.REMOTE_NAME} {TrackerServer.BRANCH_NAME}"
-        print(COMMANDE)
+        # on copie colle tous les fichers du dossier backup dans le dossier du dépot git
+        COMMANDE = f'copy {TrackerServer.LOCAL_PATH_TO_BACKUP} {TrackerServer.LOCAL_PATH_TO_SITE} /y'
+        # on copie colle tous les sous dossiers du dossier backup dans le dossier du dépot git
+        COMMANDE += f' && xcopy {TrackerServer.LOCAL_PATH_TO_BACKUP} {TrackerServer.LOCAL_PATH_TO_SITE} /e /y'
+        print(prefix+COMMANDE)
         os.system(COMMANDE)
+        # on affiche le contenu du dossier
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && tree /f"
+        print(prefix+COMMANDE)
+        os.system(COMMANDE)
+
+        # on ajoute tous les fichiers du dossier du dépot git
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git add ."
+        print(prefix+COMMANDE)
+        os.system(COMMANDE)
+
+        # on commit les fichiers du dossier du dépot git
+        COMMANDE = f'cd {TrackerServer.LOCAL_PATH_TO_SITE} && git commit -m "Update FleetyTracker {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}"'
+        print(prefix+COMMANDE)
+        os.system(COMMANDE)
+
         print("\n--------------------------------------")
         print(f">>> Site publié à l'adresse : {TrackerServer.LIEN_SITE} <<<")
         print("--------------------------------------\n")
@@ -1217,5 +1242,6 @@ class TrackerServer():
 
 if __name__ == "__main__":
 
-    TrackerServer().config_git().publish_site()
+    TrackerServer().publish_site()
+
 
