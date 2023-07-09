@@ -65,7 +65,7 @@ class DataBase():
         """
         Fonction qui lance la mise à jour de la base de données de manière automatique
         """
-        if self.load_last_save() and not complete_init: # si le chargement de la dernière sauvegarde a réussi
+        if not complete_init and self.load_last_save: # si le chargement de la dernière sauvegarde a réussi
             self.updatetDB(complete_update=False) # on lance une mise à jour partielle qui ne met à jour que infos qui nous intéressent
         else: # si le chargement de la dernière sauvegarde a échoué
             self.updatetDB(complete_update=True)
@@ -76,6 +76,8 @@ class DataBase():
             print("\n  --- COMPLETE UPDATE DATABASE ---   ")
             print("====================================")
             self.request_update_ggsheet()
+            # on fait une copie de la base de données pour pouvoir comparer les deux
+            self._last_update_db = self._tracked_fleet_df.copy()
             if print_ggsheet_extraction :
                 print(" ----- GGSHEET EXTRACTION -----")
                 print(self.__df)
@@ -90,7 +92,7 @@ class DataBase():
         else : # on lance une mise à jour partielle
             print("\n  --- PARTIAL UPDATE DATABASE ---   ")
             print("====================================")
-            self._last_update_db = self._tracked_fleet_df
+            self.load_last_save()
             self.request_update_ggsheet()
             if print_ggsheet_extraction :
                 print("                                 ----- GGSHEET EXTRACTION -----")
@@ -113,15 +115,15 @@ class DataBase():
         print("_________________________________________________________")
         print("► Date de sauvegarde choisie :", date.strftime(DataBase.format_print))
         print("► Chargement des données AIS...")
-        self._tracked_fleet_df = pd.read_csv(DataBase.format_path_saving_data.format(date.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
+        self._last_update_db = pd.read_csv(DataBase.format_path_saving_data.format(date.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
         if print_result:
             print("                                 ----- DATAFRAME -----")
-            print(self._tracked_fleet_df.tail(10)) # on affiche les 10 dernières lignes du dataframe
+            print(self._last_update_db.tail(10)) # on affiche les 10 dernières lignes du dataframe
             # on affiche les 10 dernières lignes du dataframe
             print("Affichage des 10 dernières lignes du dataframe")
-            print(self._tracked_fleet_df.info())
+            print(self._last_update_db.info())
         # on print le nombre de bateaux 
-        print("\nNombre de bateaux présents sur la sauvegarde : ", len(self._tracked_fleet_df))
+        print("\nNombre de bateaux présents sur la sauvegarde : ", len(self._last_update_db))
         print("_________________________________________________________")
 
     def load_last_save(self)-> None:
@@ -168,6 +170,7 @@ class DataBase():
         return list_files
     
     def saveDB(self):
+        print(" --> Save database...")
         date = datetime.now()
         # on récupère la liste des fichiers de données AIS dans le dossier data_ship
         list_files = self.get_list_of_saves()
@@ -175,7 +178,7 @@ class DataBase():
         if len(list_files) >= DataBase.MAX_NUMBER_OF_FILES:
             # on récupère le plus vieux fichier
             oldest_file = min(list_files)
-            print("--> Le serveur ne peut pas stocker plus de {0} fichiers de données AIS,\nle fichier le plus ancien sera supprimé : {1}".format(
+            print("     → Le serveur ne peut pas stocker plus de {0} fichiers de données AIS.\      → Le fichier le plus ancien sera supprimé : {1}".format(
                 DataBase.MAX_NUMBER_OF_FILES, 'SAVE__'+oldest_file.strftime(DataBase.FORMAT_DATE_CSV_FILE)+'.csv'))
             # on supprime le fichier le plus ancien
             os.remove(DataBase.format_path_saving_data.format(oldest_file.strftime(DataBase.FORMAT_DATE_CSV_FILE)))
@@ -213,12 +216,12 @@ class DataBase():
         """
         On recherche les données AIS pour chaque bateau de la flotte du YCC
         """
+        self._tracked_fleet_df =pd.DataFrame(self._tracked_fleet_df)
 
         LONG = []
         LAT = []
         SPEED = []
         LAST_POSITION = []
-        COUNT_PHOTOS = []
         SHIP_ID = []
         CAP = []
         COUNTRY_CODE = []
@@ -244,6 +247,7 @@ class DataBase():
                     "speed":"SPEED",
                     "course":"CAP",
                     }
+        
         response_conversion = {"flag":"CODE2",
                             "imo":"SHIP_ID",
                             "time_of_latest_position":"LAST_POS",
@@ -257,34 +261,43 @@ class DataBase():
         for column in fixable_columns:
             skipped[column] = 0
         
+        for column in fixable_columns+always_updated_columns:
+            self._tracked_fleet_df[Conversion[f"{column}"]] = [np.nan for i in range(self._tracked_fleet_df.shape[0])]
+        if complete_update:
+            wanted_columns = always_updated_columns+fixable_columns
+        
         for index, row in tqdm(self._tracked_fleet_df.iterrows(), total=self._tracked_fleet_df.shape[0], desc='Recherche des données AIS pour les bateaux de la flotte...',leave=False):
             # on attend un temps aléatoire entre minTIME_SLEEP et maxTIME_SLEEP (float)
             time.sleep(random.uniform(DataBase.minTIME_SLEEP, DataBase.maxTIME_SLEEP))
-            wanted_colums = always_updated_columns
             try:
                 # on récupère les données AIS du bateau
-                for index,column in enumerate(fixable_columns):
-                    if complete_update:
-                        wanted_column = always_updated_columns + fixable_columns
-                    elif not(complete_update) and not (pd.isna(self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[f"{column}"]].values[0])):
-                        wanted_colums.append(column)
-                    else : 
-                        skipped[column] += 1
+                if not(complete_update):
+                    #print("not complete update")
+                    wanted_columns = always_updated_columns
+                    for index,column in enumerate(fixable_columns):
+                            if not(pd.isna(self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI']][Conversion[f"{column}"]].values[0])):
+                                wanted_columns.append(column)
+                            else : 
+                                skipped[column] += 1
 
+                #print(wanted_columns)
                 ais = AIS(verbose=False,
-                        columns=wanted_colums,
                         return_df=False,
                         return_total_count=False,
                         seconds_wait=DataBase.seconds_wait,
                         num_retries = DataBase.num_retries,
                     )
                 response = ais.get_location(row['MMSI'])
+                #print(response[0])
+                
 
-                for index, column in enumerate(wanted_colums):
-                    self._tracked_fleet_df.loc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f"{column}"]] = response[0][response_conversion[f"{column}"]]
-                for index,column in enumerate([column for column in fixable_columns if column not in wanted_colums]):
-                    self._tracked_fleet_df.loc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f"{column}"]] = self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f"{column}"]]
-
+                for index, column in enumerate(wanted_columns):
+                    #print(response[0][response_conversion[column]])
+                    self._tracked_fleet_df.loc[self._last_update_db['MMSI'] == row['MMSI'],Conversion[f"{column}"]] = response[0][response_conversion[column]]
+                    #print(f"→ {row['Nom du bateau']} ({row['MMSI']}) : {column} → {response[0][response_conversion[f'{column}']]}")
+                for index,column in enumerate([column for column in fixable_columns if column not in wanted_columns]):
+                    self._tracked_fleet_df.iloc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f"{column}"]] = self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f"{column}"]]
+                    #print(f"→ {row['Nom du bateau']} ({row['MMSI']}) : {column} → {self._last_update_db.loc[self._last_update_db['MMSI'] == row['MMSI'], Conversion[f'{column}']]}")
                 
             except Exception as e:
                 # on print l'erreur et son explication0
@@ -295,7 +308,7 @@ class DataBase():
                 # on supprime la ligne
                 self._tracked_fleet_df.drop(index_to_drop, inplace=True)
 
-
+        
         self._tracked_fleet_df['LONG'] = self._tracked_fleet_df['LONG'].astype(
             'float64')
         self._tracked_fleet_df['LAT'] = self._tracked_fleet_df['LAT'].astype(
@@ -306,11 +319,15 @@ class DataBase():
             'int64')
         self._tracked_fleet_df['CAP'] = self._tracked_fleet_df['CAP'].astype(
             'float64')
-        self._tracked_fleet_df['COUNTRY_C3ODE'] = self._tracked_fleet_df['COUNTRY_CODE'].astype(
+        self._tracked_fleet_df['COUNTRY_CODE'] = self._tracked_fleet_df['COUNTRY_CODE'].astype(
             'str')
         
         if trace_on_log:
             print(self._tracked_fleet_df)
+
+        if not(complete_update):
+            for column in fixable_columns:
+                print(f"    → {skipped[column]} bateaux n'ont pas été mis à jour pour la colonne {Conversion[f'{column}']}")
 
     def check_page_MMR(self,complete_check=False):
         """
@@ -1202,12 +1219,6 @@ class TrackerServer():
         COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git status"
         print(prefix+COMMANDE)
         os.system(COMMANDE)
-
-        # on print les logs du dépot git
-        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git log"
-        print(prefix+COMMANDE)
-        os.system(COMMANDE)
-
         
         # on supprime tous les fichiers et dossiers présents dans le dossier du dépot git
         COMMANDE = f'cd {TrackerServer.LOCAL_PATH_TO_SITE} && del /f /q "index.html" && del /f /q "README.md" && del /f /q "LICENSE" && rmdir /s /q "images" && rmdir /s /q "DATA_SAVES"'
@@ -1230,14 +1241,27 @@ class TrackerServer():
         print(prefix+COMMANDE)
         os.system(COMMANDE)
 
+        # on pull les fichiers du dossier du dépot git
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git pull {TrackerServer.REMOTE_NAME} {TrackerServer.BRANCH_NAME}"
+        print(prefix+COMMANDE)
+        os.system(COMMANDE)
+
         # on commit les fichiers du dossier du dépot git
         COMMANDE = f'cd {TrackerServer.LOCAL_PATH_TO_SITE} && git commit -m "Update FleetyTracker {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}"'
         print(prefix+COMMANDE)
         os.system(COMMANDE)
 
+        # on push les fichiers du dossier du dépot git
+        COMMANDE = f"cd {TrackerServer.LOCAL_PATH_TO_SITE} && git push {TrackerServer.REMOTE_NAME} {TrackerServer.BRANCH_NAME}"
+        print(prefix+COMMANDE)
+        os.system(COMMANDE)
+
+
         print("\n--------------------------------------")
         print(f">>> Site publié à l'adresse : {TrackerServer.LIEN_SITE} <<<")
         print("--------------------------------------\n")
+
+        return TrackerServer.LIEN_SITE
 
 
 if __name__ == "__main__":
