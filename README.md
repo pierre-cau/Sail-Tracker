@@ -33,7 +33,7 @@ git clone
 
 ## Utilisation
 
-Pour utiliser le projet, il suffit de lancer le fichier `main.py` avec la commande suivante :
+Pour utiliser le projet, il suffit de lancer le fichier `main.py` avec la commande suivante une fois avoir bien vérifié que la localisation du répertoire du projet correspond avec celle du répertoire courant via la commande `cd` (pour les utilisateurs de Windows) :
 
 ```bash
 python main.py
@@ -45,7 +45,7 @@ Pour contribuer au projet, il suffit de faire une pull request sur le dépôt gi
 
 ## Licence
 
-Pour plus d'informations sur la licence, veuillez vous référer au fichier `LICENSE.txt`.
+Pour plus d'informations sur la licence, veuillez vous référer au fichier `Tracker_fleet_YCC/LICENSE.txt`.
 
 ``` text
 MIT License
@@ -67,9 +67,9 @@ Pour identifier les bateaux, j'ai décidé de passer par le ***numéro MMSI*** d
 
 ### Système de suivi des bateaux
 
-Une fois le système d'identification des bateaux mis en place, il faut pouvoir suivre ces derniers. Pour cela, j'ai cherché à récupérer les données ***AIS*** (Automatic Identification System) des bateaux. Les données ***AIS*** sont des données de positionnement des bateaux. Elles sont émises par les bateaux et reçues par des stations à terre. Ces données sont ensuite transmises à des serveurs qui les rendent accessibles au public. Il existe plusieurs serveurs qui permettent d'accéder à ces données. J'ai choisi d'utiliser le serveur [**MarineTraffic**](https://www.marinetraffic.com/). Ce dernier permet d'accéder aux données AIS de manière "gratuite et facile". Il suffit de créer un compte et de récupérer une clé API. Cette clé API permet d'accéder aux données AIS des bateaux. Il suffit ensuite de faire une requête à l'API pour récupérer les données AIS des bateaux. Ces données sont au format `JSON`.
+Une fois le système d'identification des bateaux mis en place, il faut pouvoir suivre ces derniers. Pour cela, j'ai cherché à récupérer les données ***AIS (Automatic Identification System)*** des bateaux. Les données ***AIS*** sont des données de positionnement des bateaux. Elles sont émises par les bateaux et reçues par des stations à terre. Ces données sont ensuite transmises à des serveurs qui les rendent accessibles au public. Il existe plusieurs serveurs qui permettent d'accéder à ces données. J'ai choisi d'utiliser le serveur [**MarineTraffic**](https://www.marinetraffic.com/). Ce dernier permet d'accéder aux données AIS de manière "gratuite et facile". Il suffit de créer un compte et de récupérer une clé API. Cette clé API permet d'accéder aux données AIS des bateaux. Il suffit ensuite de faire une requête à l'API pour récupérer les données AIS des bateaux. Ces données sont au format `JSON`.
 
-Il convient de noter que les données AIS ne sont pas disponibles pour tous les bateaux. En effet, il faut que ces derniers soient équipés d'un émetteur AIS. De plus, il faut que ces derniers soient dans une zone couverte par les stations AIS. Enfin, il faut que ces derniers soient en fonctionnement. Ainsi, il est possible et même très probable que certains bateaux ne soient pas suivis par le système. C'est pourquoi, il est nécessaire de mettre en place un système de suivi alternatif à terme.
+Il convient de noter que les données AIS ne sont pas disponibles pour tous les bateaux. En effet, il faut que ces derniers soient équipés d'un émetteur AIS. Il faut aussi qu'ils soient dans une zone couverte par les stations AIS. Enfin, il faut qu'ils soient en fonctionnement. Ainsi, il est possible, et même très probable, que certains bateaux ne soient pas suivis par le système. C'est pourquoi, il est nécessaire de mettre en place un système de suivi alternatif à terme.
 
 Une solution possible serait de mettre en place un système de suivi par GPS. Ce système permettrait de suivre les bateaux même s'ils ne sont pas équipés d'un émetteur AIS. Cependant, ce système est plus coûteux et plus complexe à mettre en place. Il nécessite notamment de mettre en place un système de communication entre les bateaux et les serveurs. Un système de stockage des données sera également nécessaire. Alors qu'une API 'open source' permet d'accéder aux données AIS très rapidement et totalement gratuitement.
 
@@ -93,10 +93,10 @@ Vous trouverez dans le fichier `tracker_tools.py` la classe `TrackerServer` qui 
 
 Le résultat du programme est une carte interactive qui permet de suivre les bateaux de la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/). Le fichier `index.html` est la carte interactive générée par le programme. Vous pouvez également la retrouver à l'adresse suivante :
 
-- [**https://github.com/pierre-cau/YCC_fleet_tracker/blob/main/Tracker_fleet_YCC/index.html**](https://github.com/pierre-cau/YCC_fleet_tracker/blob/main/Tracker_fleet_YCC/index.html)
+- [**https://pierre-cau.github.io/FleetyTracker/index.html**](https://pierre-cau.github.io/FleetyTracker/)
 
-
-![Carte interactive]()
+<!-- On ajoute une vidéo de démonstration -->
+! [Démonstration] (Tracker_fleet_YCC/images/Tuto_site.mp4)
 
 ## Sources
 
@@ -107,3 +107,4 @@ Le résultat du programme est une carte interactive qui permet de suivre les bat
 - [**Folium**](https://python-visualization.github.io/folium/)
 - [**Wikipedia AIS**](https://fr.wikipedia.org/wiki/Automatic_Identification_System)
 - [**Wikipedia MMSI**](https://fr.wikipedia.org/wiki/Maritime_Mobile_Service_Identity)
+
