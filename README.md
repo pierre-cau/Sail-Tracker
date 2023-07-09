@@ -95,8 +95,8 @@ Le résultat du programme est une carte interactive qui permet de suivre les bat
 
 - [**https://pierre-cau.github.io/FleetyTracker/index.html**](https://pierre-cau.github.io/FleetyTracker/)
 
-<!-- On ajoute une vidéo de démonstration -->
-! [Démonstration] (Tracker_fleet_YCC/images/Tuto_site.mp4)
+<!-- On ajoute une vidéo de démonstration dans un iframe -->
+<iframe width="560" height="315" src="Tracker_fleet_YCC/images/Tuto_site.mp4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Sources
 
