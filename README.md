@@ -1,9 +1,14 @@
+<!-- on met le logo en haut de la page -->
+<div align="center">
+  <img src="Tracker_fleet_YCC\images\Logo_FleetyTrack\sansBG\Logo_fleetytrack_txt_H_sansBG.svg" alt="logo" width="auto" height="80" display="block"/>
+</div>
+
 # Tracker de flotte 🔎
 
-<!-- on met le logo en haut de la page -->
-![Logo](Tracker_fleet_YCC/images/Logo_FleetyTrack/BG_blanc75/Logo_fleetytrack_txt_V_BGW75.svg)
+###### Tu te demandes comment traquer ta flotte ?...Tu es au bon endroit !
 
-###### Ce projet utilise...
+<div align="center">
+  <img src="Tracker_fleet_YCC\images\Logo_FleetyTrack\sansBG\Logo_fleetytrack_sansBG.svg" alt="logo" width="200" height="200" display="block"/> 
 
 <p>
   <img src="https://www.svgrepo.com/show/303205/html-5-logo.svg" alt="html" width="30" height="30"/>
@@ -11,19 +16,31 @@
   <img src="https://www.svgrepo.com/show/349419/javascript.svg" alt="js" width="30" height="30"/>
   <img src="https://stormglass.io/wp-content/uploads/2019/05/Stormglass-Circle-1400.svg" height="30" alt="storm-glass">
   <img src="https://www.svgrepo.com/show/452091/python.svg" height="30" alt="python">
+  <img src="https://python-visualization.github.io/folium/_images/folium_logo.jpg" height="30" alt="folium">
   <img src="https://cdn.svgporn.com/logos/leaflet.svg" height="30" alt="leaflet-maps">
 </p>
+</div>
 
-## Table des matières
+<div height="30" align="center">
+  <img src="https://img.shields.io/badge/Version-1.0.0-blue" alt="version">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="license">
+  <img src="https://img.shields.io/badge/Status-En%20cours-orange" alt="status">
+</div>
 
-
-
-## Propriétaire
+## Propriétaire 📝
 
 L'intégralité du projet est la propriété du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).
 Ce dernier a été développé dans son intégralité par [**Pierre CAU**](
 https://www.linkedin.com/in/pierre-cau), étudiant ingénieur à [l'École Centrale de Lyon](https://www.ec-lyon.fr/).
 Pour toute question/problème, veuillez vous adresser à l'adresse suivante : [pcaupro@gmail.com](mailto:pcaupro@gmail.com)
+
+## Licence ©️🔒
+
+Pour plus d'informations sur la licence, veuillez vous référer au fichier `Tracker_fleet_YCC/LICENSE.txt`.
+
+``` text
+MIT License
+```
 
 ## Description du projet 📚
 
@@ -37,7 +54,7 @@ Pour installer le projet, il suffit de cloner le dépôt git sur votre machine. 
 git clone
 ```
 
-## Utilisation
+## 📌 Utilisation
 
 Pour utiliser le projet, il suffit de lancer le fichier `main.py` avec la commande suivante une fois avoir bien vérifié que la localisation du répertoire du projet correspond avec celle du répertoire courant via la commande `cd` (pour les utilisateurs de Windows) :
 
@@ -45,19 +62,12 @@ Pour utiliser le projet, il suffit de lancer le fichier `main.py` avec la comman
 python main.py
 ```
 
-## Contribuer
+## 📌 Contribuer
 
 Pour contribuer au projet, il suffit de faire une pull request sur le dépôt git.
 
-## Licence
 
-Pour plus d'informations sur la licence, veuillez vous référer au fichier `Tracker_fleet_YCC/LICENSE.txt`.
-
-``` text
-MIT License
-```
-
-## Objectifs du projet
+## 📌 Objectifs du projet
 
 La première version du projet a pour but de créer un tracker de flotte. Afin de pouvoir suivre ces même bateaux, il faut pouvoir les identifier. Pour cela, il faut créer un système d'identification des bateaux. Ce système doit être simple et facilement identifiable. Il doit également être facilement modifiable. En effet, il est possible que la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/) évolue. Il faut donc pouvoir ajouter ou supprimer des bateaux facilement.
 Ainsi les objectifs du projet sont les suivants :
@@ -65,9 +75,9 @@ Ainsi les objectifs du projet sont les suivants :
 - Créer un système d'identification des bateaux
 - Créer un système de suivi des bateaux
 
-## Mise en place du projet
+## 📌 Mise en place du projet
 
-### Système d'identification des bateaux
+### Système d'identification des bateaux 🔢
 
 Pour identifier les bateaux, j'ai décidé de passer par le ***numéro MMSI*** de ces derniers. Les ***numéros MMSI*** sont systématiquement attribués aux bateaux de plaisance. Ils sont composés de **9 chiffres**. Ils sont attribués par [l'ANFR](https://www.anfr.fr/) (Agence Nationale des Fréquences) et constitue une sorte de "plaque d'immatriculation" pour les bateaux. Ils sont utilisés pour les communications VHF et pour la localisation des bateaux.
 
@@ -96,7 +106,7 @@ Pour générer la carte interactive, j'ai utilisé la librairie [**Folium**](htt
 
 Vous trouverez dans le fichier `tracker_tools.py` la classe `TrackerServer` qui permet de générer la carte interactive via la méthode `generate_html_()`.
 
-## Résultats
+## 📌 Résultats
 
 Le résultat du programme est une carte interactive qui permet de suivre les bateaux de la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/). Le fichier `index.html` est la carte interactive générée par le programme. Vous pouvez également la retrouver à l'adresse suivante :
 
@@ -105,7 +115,7 @@ Le résultat du programme est une carte interactive qui permet de suivre les bat
 
 [![Exemple d'utilisation de la carte](https://github.com/pierre-cau/YCC_fleet_tracker/blob/main/Tracker_fleet_YCC/images/play_tuto.png)](https://youtu.be/e5CfFEt8en8)
 
-## Sources
+## 📌 Quelques liens utiles...
 
 - [**Yacht Club Classique**](https://www.yachtclubclassique.com/)
 - [**ANFR**](https://www.anfr.fr/)
@@ -125,6 +135,7 @@ Le résultat du programme est une carte interactive qui permet de suivre les bat
 [![Linkedin Badge](https://img.shields.io/badge/-LinkedIn-blue?style=flat-square&logo=Linkedin&logoColor=white&link=https://www.linkedin.com/in/gabriel-lopes-6625631b0/)](https://www.linkedin.com/in/pierre-cau)
 [![Gmail Badge](https://img.shields.io/badge/-Gmail-D14836?&style=flat-square&logo=Gmail&logoColor=white&link=mailto:gabrielluislopes00@gmail.com)](mailto:pcaupro@gmail.com)
 [![Facebook Badge](https://img.shields.io/badge/facebook-%231877F2.svg?&style=flat-square&logo=facebook&logoColor=white)](https://www.facebook.com/Pcau22410/)
+
 
 
 
