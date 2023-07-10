@@ -450,13 +450,14 @@ class TrackerServer():
     et de les héberger sur un serveur.
     """
     LIEN_SITE = 'https://pierre-cau.github.io/FleetyTracker/'
-    # on récupère le répertoir courant
     LOCAL_PATH_TO_BACKUP = os.path.dirname(os.path.abspath(__file__)) + "\Tracker_fleet_YCC"
     LOCAL_PATH_TO_SITE = os.path.dirname(os.path.abspath(__file__)) + "\..\FLeetyTracker"
     LIEN_GITHUB = 'https://github.com/pierre-cau/FleetyTracker'
+    
     URL_YCC = 'https://www.yachtclubclassique.com/'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
     LOGO_URL = "images/fleetytrack_logo_withbg.png" # URL du logo
+    
     EMAIL = "pcaupro@gmail.com" # email de contact
     USERNAME = "pierre-cau" # username du compte github
     REMOTE_NAME = "FleetyTracker" # nom du repo github
@@ -470,6 +471,13 @@ class TrackerServer():
     MIN_ZOOM = 3 # zoom min
     ZOOM_LEVEL = 15 # zoom level pour focus sur un bateau
     LOCATION=[46.227638, 2.213749] # position de la carte par défaut (France)
+    ATTRIBUTION = """©  <a href="https://www.yachtclubclassique.com/">Yacht Club Classique</a> | 
+                        <a href="https://www.marinetraffic.com/">Marine Traffic</a> | 
+                        <a href="https://www.museemaritimelarochelle.fr/">Musée Maritime de La Rochelle</a> | 
+                        <a href="https://www.shom.fr//">SHOM</a> |
+                        <a href="https://github.com/pierre-cau/YCC_fleet_tracker">Git de Pierre CAU</a>""" # attribution de la carte
+    
+    TILE_URL = 'https://geoapi.fr/shomgt/tile.php/gt250k/{z}/{x}/{y}.png' # URL des tuiles de la carte
 
     # Pop up des bateaux
     TIME_TO_TURN = 2 # temps pour tourner le bateau afin de générer l'animation (en secondes)
@@ -607,12 +615,16 @@ class TrackerServer():
         offset = TrackerServer.offset # offset des icones (longitude, latitude)
 
         TIME_TO_TURN = TrackerServer.TIME_TO_TURN # temps pour tourner le bateau afin de générer l'animation (en secondes)
+        TILE_URL = TrackerServer.TILE_URL # url de layer pour le leaflet
+        ATTRIBUTION = TrackerServer.ATTRIBUTION # attribution pour le leaflet
 
         print("\n >> Création de la carte")
-        m = folium.Map(location=TrackerServer.LOCATION, zoom_start=ZOOM,max_zoom=MAX_ZOOM, min_zoom=MIN_ZOOM,control_scale=True,name=NAME)
+        m = folium.Map(location=TrackerServer.LOCATION, zoom_start=ZOOM,max_zoom=MAX_ZOOM, min_zoom=MIN_ZOOM,control_scale=True)
+            
         # on change le label du fond de carte
         folium.TileLayer('cartodbpositron',name="Positron").add_to(m, name='Positron')
         folium.TileLayer('cartodbdark_matter',name="Dark Matter").add_to(m, name='Dark Matter')
+        folium.TileLayer(TILE_URL,attr=ATTRIBUTION,name="Carte Shom").add_to(m, name='Carte Shom')
 
         
         print(" >> Création des marqueurs et popups")
@@ -1266,6 +1278,8 @@ class TrackerServer():
 
 if __name__ == "__main__":
 
-    TrackerServer().publish_site()
+    site = TrackerServer()
+    site.load_last_save()
+    site.generate_html()
 
 
