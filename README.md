@@ -1,16 +1,22 @@
-# Tracker de flotte
+# Tracker de flotte 🔎
 
 <!-- on met le logo en haut de la page -->
 ![Logo](Tracker_fleet_YCC/images/Logo_FleetyTrack/BG_blanc75/Logo_fleetytrack_txt_V_BGW75.svg)
 
+###### Ce projet utilise...
+
+<p>
+  <img src="https://www.svgrepo.com/show/303205/html-5-logo.svg" alt="html" width="30" height="30"/>
+  <img src="https://www.svgrepo.com/show/452185/css-3.svg" alt="css" width="30" height="30"/>
+  <img src="https://www.svgrepo.com/show/349419/javascript.svg" alt="js" width="30" height="30"/>
+  <img src="https://stormglass.io/wp-content/uploads/2019/05/Stormglass-Circle-1400.svg" height="30" alt="storm-glass">
+  <img src="https://www.svgrepo.com/show/452091/python.svg" height="30" alt="python">
+  <img src="https://cdn.svgporn.com/logos/leaflet.svg" height="30" alt="leaflet-maps">
+</p>
+
 ## Table des matières
 
-- [Propriétaire](#propriétaire)
-- [Description](#description)
-- [Installation](#installation)
-- [Utilisation](#utilisation)
-- [Contribuer](#contribuer)
-- [Licence](#licence)
+
 
 ## Propriétaire
 
@@ -19,11 +25,11 @@ Ce dernier a été développé dans son intégralité par [**Pierre CAU**](
 https://www.linkedin.com/in/pierre-cau), étudiant ingénieur à [l'École Centrale de Lyon](https://www.ec-lyon.fr/).
 Pour toute question/problème, veuillez vous adresser à l'adresse suivante : [pcaupro@gmail.com](mailto:pcaupro@gmail.com)
 
-## Description
+## Description du projet 📚
 
 Ce petit projet personnel a pour but de créer un tracker de flotte. Il permettra de suivre les différents mouvements de la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).
 
-## Installation
+## Installation 🔧
 
 Pour installer le projet, il suffit de cloner le dépôt git sur votre machine. Pour cela, il faut utiliser la commande suivante :
 
@@ -112,5 +118,13 @@ Le résultat du programme est une carte interactive qui permet de suivre les bat
 - [**Wikipedia AIS**](https://fr.wikipedia.org/wiki/Automatic_Identification_System)
 - [**Wikipedia MMSI**](https://fr.wikipedia.org/wiki/Maritime_Mobile_Service_Identity)
 - [**Wikipedia GPS**](https://fr.wikipedia.org/wiki/Syst%C3%A8me_de_positionnement_par_satellites)
+
+## Contact 📱
+
+[![Github Badge](https://img.shields.io/badge/-Github-000?style=flat-square&logo=Github&logoColor=white&link=https://github.com/gabriellopes00)](https://github.com/pierre-cau)
+[![Linkedin Badge](https://img.shields.io/badge/-LinkedIn-blue?style=flat-square&logo=Linkedin&logoColor=white&link=https://www.linkedin.com/in/gabriel-lopes-6625631b0/)](https://www.linkedin.com/in/pierre-cau)
+[![Gmail Badge](https://img.shields.io/badge/-Gmail-D14836?&style=flat-square&logo=Gmail&logoColor=white&link=mailto:gabrielluislopes00@gmail.com)](mailto:pcaupro@gmail.com)
+[![Facebook Badge](https://img.shields.io/badge/facebook-%231877F2.svg?&style=flat-square&logo=facebook&logoColor=white)](https://www.facebook.com/Pcau22410/)
+
 
 
