@@ -27,8 +27,6 @@
   <img src="https://img.shields.io/badge/Status-En%20cours-orange" alt="status">
 </div>
 
-___
-
 ## Propriétaire 📝
 
 L'intégralité du projet est la propriété du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).
@@ -117,6 +115,10 @@ Le résultat du programme est une carte interactive qui permet de suivre les bat
 
 
 [![Exemple d'utilisation de la carte](https://github.com/pierre-cau/YCC_fleet_tracker/blob/main/Tracker_fleet_YCC/images/play_tuto.png)](https://youtu.be/e5CfFEt8en8)
+
+## 📝 Notes
+
+Ce programme est un premier jet. Il est donc susceptible d'évoluer dans le temps. Il est également possible que des bugs soient présents. N'hésitez pas à me faire part de vos remarques et suggestions.
 
 ## 🔗 Quelques liens utiles...
 
