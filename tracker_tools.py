@@ -452,7 +452,7 @@ class TrackerServer():
     LIEN_SITE = 'https://pierre-cau.github.io/FleetyTracker/'
     LOCAL_PATH_TO_BACKUP = os.path.dirname(os.path.abspath(__file__)) + "\Tracker_fleet_YCC"
     LOCAL_PATH_TO_SITE = os.path.dirname(os.path.abspath(__file__)) + "\..\FLeetyTracker"
-    LIEN_GITHUB = 'https://github.com/pierre-cau/FleetyTracker'
+    LIEN_GITHUB = 'https://github.com/pierre-cau/YCC_fleet_tracker'
     
     URL_YCC = 'https://www.yachtclubclassique.com/'
     DEFAULT_HTML_FILE_NAME = "index.html" # nom du fichier HTML par défaut
@@ -914,7 +914,7 @@ class TrackerServer():
         <head>
         <meta charset="utf-8">
         <title>{TrackerServer.NAME}</title>
-        <link rel="icon" type="image/png" href="Tracker_fleet_YCC/images/fleetytrack_logo_withoutbg.png" />
+        <link rel="icon" type="image/png" href="images\Logo_FleetyTrack\BG_blanc65\Logo_fleetytrack_BGW65_round.svg" width="100%">
         </head>
         <div id="box" style="width: min-content;
             position: absolute;
@@ -932,7 +932,7 @@ class TrackerServer():
             padding: 5px;
             ">
             <img onclick="window.open('{TrackerServer.URL_YCC}')"
-                class=zoomable1 src="images/logo.png" alt="logo"
+                class=zoomable1 src="images\logo.png" alt="logo"
                 style="width: 50%; 
                     height: auto; 
                     display: block; 
@@ -940,7 +940,6 @@ class TrackerServer():
                     margin-right: auto; 
                     margin-top:5px;
                     border-radius: 50%;"/>
-            <img src="images/yacht-club-classique.png" alt="YCC" style="width: 95%; height: auto; display: block; margin-left: auto; margin-right: auto; margin-top:5px; margin-bottom:10px">
             <div id="track_container" style="overflow-y: scroll; height: 200px; width: max-content; margin-left: auto; margin-right: auto; margin-top:5px; margin-bottom:10px">
         """
 
@@ -1053,10 +1052,11 @@ class TrackerServer():
 
         <!-- on ajoute le logo en bas à droite de la carte -->
         <div class="zoomable1 signature" onclick="window.open('{TrackerServer.LIEN_GITHUB}')">
-                <img src="images/fleetytrack_logo_withoutbg.png" alt="logo" style="
+                <img src="images\Logo_FleetyTrack\sansBG\Logo_fleetytrack_sansBG.svg" alt="logo" style="
                     width: auto;
                     float: left;
                     margin-left: 5px;
+                    padding: 5px;
                     height: inherit;">
                 <img src="images/fleetytrack_logopowered.png" alt='poweredby' style="
                     float:right;
