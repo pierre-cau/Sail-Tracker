@@ -6,8 +6,6 @@ from folium.plugins import HeatMap
 import folium
 import urllib
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import requests
 # on récupère beautifulsoup4 pour parser le html
 from bs4 import BeautifulSoup

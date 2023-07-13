@@ -20,6 +20,11 @@ if __name__ == '__main__':
     print("\n\n__________________________TRACKER SERVER INITIALIZED__________________________\n\n")
     
 
+
+
+
+### VERSION AVEC BOUCLE INFINIE
+"""
     # on lance le serveur
     while True:
         # on attend DELAY secondes avant de recommencer en affichant le temps restant
@@ -37,7 +42,7 @@ if __name__ == '__main__':
         site.publish_site()
         print("\n\n__________________________TRACKER SERVER UPDATED__________________________\n\n")
 
-        
+"""      
         
 
 
