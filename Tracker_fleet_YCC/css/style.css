@@ -1,0 +1,15 @@
+.logo {
+    width: 38%;
+    background-color: rgb(247, 255, 205);
+    background-size: contain;
+    display: block;
+
+    /* on centre le logo horizontalement */
+    margin-left: auto;
+    margin-right: auto;
+
+    /* on centre le logo verticalement */
+    margin-top: 6%;
+
+}
+

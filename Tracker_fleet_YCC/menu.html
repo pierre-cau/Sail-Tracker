@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FleetyTracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images\Logo_FleetyTrack\BG_blanc65\Logo_fleetytrack_BGW65_round.svg" width="100%">
+    <link rel="script" href="js/animation.js">
+</head>
+<body>
+    <object data="images\Logo_FleetyTrack\BG_blanc65\Logo_fleetytrack_BGW65_round.svg" class = "logo"
+            width="100%"
+            type="image/svg+xml">
+    </object>
+        
+       
+</body>
+<script>
+    let TIMEOUT = 5000; // timeout before quitting the animation
+    let TARGET = "index.html"; // target page to redirect to
+    
+
+    // on fait tourner le logo
+    let logo = document.querySelector(".logo");
+
+    // on lance la fonction clock_to_quit au bout de TIMEOUT ms
+    //clock_to_quit();
+    function clock_to_quit() {
+        setTimeout(quit, TIMEOUT);
+        function quit() {
+            window.location.href = TARGET;
+        }
+
+    }
+
+
+
+</script>
+</html>
+    
