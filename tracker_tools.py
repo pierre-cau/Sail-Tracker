@@ -475,7 +475,7 @@ class TrackerServer():
                         <a href="https://www.shom.fr//">SHOM</a> |
                         <a href="https://github.com/pierre-cau/YCC_fleet_tracker">Git de Pierre CAU</a>""" # attribution de la carte
     
-    TILE_URL = 'https://geoapi.fr/shomgt/tile.php/gt250k/{z}/{x}/{y}.png' # URL des tuiles de la carte
+    TILE_URL = 'https://geoapi.fr/shomgt/tile.php/gtpyr/{z}/{x}/{y}.png' # URL des tuiles de la carte
 
     # Pop up des bateaux
     TIME_TO_TURN = 2 # temps pour tourner le bateau afin de générer l'animation (en secondes)
@@ -492,7 +492,7 @@ class TrackerServer():
 
 
     # dictionnaire des pays avec le lien de leur drapeau
-    dictionnary_country = { 'FR':'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Flag_of_France_%281794%E2%80%931815%2C_1830%E2%80%931974%2C_2020%E2%80%93present%29.svg/1280px-Flag_of_France_%281794%E2%80%931815%2C_1830%E2%80%931974%2C_2020%E2%80%93present%29.svg.png',
+    dictionnary_country = { 'FR':'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Flag_of_France_%281794%E2%80%931815%2C_1830%E2%80%931974%29.svg/1280px-Flag_of_France_%281794%E2%80%931815%2C_1830%E2%80%931974%29.svg.png',
                             'GB':'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Flag_of_the_United_Kingdom_%283-5%29.svg/1920px-Flag_of_the_United_Kingdom_%283-5%29.svg.png',
                             'IT':'https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Flag_of_Italy.svg/1280px-Flag_of_Italy.svg.png',
                             'MT':'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Flag_of_Malta.svg/120px-Flag_of_Malta.svg.png',
