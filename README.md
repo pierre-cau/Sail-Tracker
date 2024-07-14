@@ -27,113 +27,110 @@
   <img src="https://img.shields.io/badge/Status-En%20cours-orange" alt="status">
 </div>
 
-## Propriétaire 📝
+## Ownership 📝
 
-L'intégralité du projet est la propriété du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).
-Ce dernier a été développé dans son intégralité par [**Pierre CAU**](
-https://www.linkedin.com/in/pierre-cau), étudiant ingénieur à [l'École Centrale de Lyon](https://www.ec-lyon.fr/).
-Pour toute question/problème, veuillez vous adresser à l'adresse suivante : [pcaupro@gmail.com](mailto:pcaupro@gmail.com)
+The entire project is owned by the [**Classic Yacht Club**](https://www.yachtclubclassique.com/).
+It was fully developed by [**Pierre CAU**](https://www.linkedin.com/in/pierre-cau), an engineering student at [École Centrale de Lyon](https://www.ec-lyon.fr/).
+For any questions/issues, please contact the following address: [pcaupro@gmail.com](mailto:pcaupro@gmail.com)
 
-## Licence ©️🔒
+## License ©️🔒
 
-Pour plus d'informations sur la licence, veuillez vous référer au fichier `Tracker_fleet_YCC/LICENSE.txt`.
+For more information about the license, please refer to the `Tracker_fleet_YCC/LICENSE.txt` file.
 
 ``` text
 MIT License
 ```
 
-## Description du projet 📚
+## Project Description 📚
 
-Ce petit projet personnel a pour but de créer un tracker de flotte. Il permettra de suivre les différents mouvements de la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/).
-
+This small personal project aims to create a fleet tracker. It will allow tracking the various movements of the fleet of the [**Classic Yacht Club**](https://www.yachtclubclassique.com/).
 ## Installation 🔧
 
-Pour installer le projet, il suffit de cloner le dépôt git sur votre machine. Pour cela, il faut utiliser la commande suivante :
+To install the project, simply clone the git repository to your machine. To do this, use the following command:
 
 ```bash
 git clone
 ```
 
-## Contribuer au projet 🤝
+## Contributing to the Project 🤝
 
-Pour contribuer au projet, il suffit de faire une pull request sur le dépôt git.
+To contribute to the project, simply make a pull request on the git repository.
 
 ___
 
-## 📌 Utilisation
+## 📌 Usage
 
-Pour utiliser le projet, il suffit de lancer le fichier `main.py` avec la commande suivante une fois avoir bien vérifié que la localisation du répertoire du projet correspond avec celle du répertoire courant via la commande `cd` (pour les utilisateurs de Windows) :
+To use the project, simply run the `main.py` file with the following command after ensuring that the project directory location matches the current directory via the `cd` command (for Windows users):
 
 ```bash
 python main.py
 ```
 
-## 📌 Objectifs du projet
+## 📌 Project Goals
 
-La première version du projet a pour but de créer un tracker de flotte. Afin de pouvoir suivre ces même bateaux, il faut pouvoir les identifier. Pour cela, il faut créer un système d'identification des bateaux. Ce système doit être simple et facilement identifiable. Il doit également être facilement modifiable. En effet, il est possible que la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/) évolue. Il faut donc pouvoir ajouter ou supprimer des bateaux facilement.
-Ainsi les objectifs du projet sont les suivants :
+The first version of the project aims to create a fleet tracker. In order to track these boats, it is necessary to be able to identify them. For this, a boat identification system must be created. This system should be simple and easily identifiable. It must also be easily modifiable. Indeed, the fleet of the [**Classic Yacht Club**](https://www.yachtclubclassique.com/) may evolve. Therefore, it should be possible to easily add or remove boats.
+Thus, the project goals are as follows:
 
-- Créer un système d'identification des bateaux
-- Créer un système de suivi des bateaux
+- Create a boat identification system
+- Create a boat tracking system
 
-## 📌 Mise en place du projet
+## 📌 Project Setup
 
-### Système d'identification des bateaux 🆔
+### Boat Identification System 🆔
 
-Pour identifier les bateaux, j'ai décidé de passer par le ***numéro MMSI*** de ces derniers. Les ***numéros MMSI*** sont systématiquement attribués aux bateaux de plaisance. Ils sont composés de **9 chiffres**. Ils sont attribués par [l'ANFR](https://www.anfr.fr/) (Agence Nationale des Fréquences) et constitue une sorte de "plaque d'immatriculation" pour les bateaux. Ils sont utilisés pour les communications VHF et pour la localisation des bateaux.
+To identify the boats, I decided to use their ***MMSI number***. The ***MMSI numbers*** are systematically assigned to pleasure boats. They consist of **9 digits**. They are assigned by [the ANFR](https://www.anfr.fr/) (National Frequency Agency) and serve as a sort of "license plate" for boats. They are used for VHF communications and for locating boats.
 
-### Système de suivi des bateaux 📡
+### Boat Tracking System 📡
 
-Une fois le système d'identification des bateaux mis en place, il faut pouvoir suivre ces derniers. Pour cela, j'ai cherché à récupérer les données ***AIS (Automatic Identification System)*** des bateaux. Les données ***AIS*** sont des données de positionnement des bateaux. Elles sont émises par les bateaux et reçues par des stations à terre. Ces données sont ensuite transmises à des serveurs qui les rendent accessibles au public. Il existe plusieurs serveurs qui permettent d'accéder à ces données. J'ai choisi d'utiliser le serveur [**MarineTraffic**](https://www.marinetraffic.com/). Ce dernier permet d'accéder aux données AIS de manière "gratuite et facile". Il suffit de créer un compte et de récupérer une clé API. Cette clé API permet d'accéder aux données AIS des bateaux.Si l'on interroge les serveurs par une simple requête à l'API, on arrive alors à récupérer les données AIS des bateaux. Ces données sont au format `JSON`.
-D'autres solutions côté API (telles que [**AIS Hub**](https://www.aishub.net/)) étant envisageables.
+Once the boat identification system is in place, it is necessary to track these boats. For this purpose, I sought to retrieve the ***AIS (Automatic Identification System)*** data of the boats. The ***AIS*** data are positioning data of the boats. They are emitted by the boats and received by land stations. These data are then transmitted to servers that make them accessible to the public. There are several servers that allow access to this data. I chose to use the server [**MarineTraffic**](https://www.marinetraffic.com/). This server allows access to AIS data in a "free and easy" manner. It is enough to create an account and retrieve an API key. This API key allows access to the AIS data of the boats. If the servers are queried with a simple API request, it is then possible to retrieve the AIS data of the boats. These data are in `JSON` format.
+Other API solutions (such as [**AIS Hub**](https://www.aishub.net/)) are also conceivable.
 
-Il convient de noter que les données AIS ne sont pas disponibles pour tous les bateaux. En effet, il faut que ces derniers soient équipés d'un émetteur AIS. Il faut aussi qu'ils soient dans une zone couverte par les stations AIS. Enfin, il faut qu'ils soient en fonctionnement. Ainsi, il est possible, et même très probable, que certains bateaux ne soient pas suivis par le système. C'est pourquoi, il est nécessaire de mettre en place un système de suivi alternatif à terme.
+It should be noted that AIS data are not available for all boats. Indeed, they must be equipped with an AIS transmitter. They must also be in an area covered by AIS stations. Finally, they must be operational. Thus, it is possible, and even very likely, that some boats will not be tracked by the system. This is why it is necessary to set up an alternative tracking system in the long term.
 
-Une solution possible serait de mettre en place un système de suivi par GPS. Ce système permettrait de suivre les bateaux même s'ils ne sont pas équipés d'un émetteur AIS. Cependant, ce système est plus coûteux et plus complexe à mettre en place. Il nécessite notamment de mettre en place un système de communication entre les bateaux et les serveurs. Un système de stockage des données sera également nécessaire. Alors qu'une API 'open source' permet d'accéder aux données AIS très rapidement et totalement gratuitement.
+A possible solution would be to set up a GPS tracking system. This system would allow tracking boats even if they are not equipped with an AIS transmitter. However, this system is more costly and more complex to implement. It requires, in particular, setting up a communication system between the boats and the servers. A data storage system will also be necessary. Whereas an 'open source' API allows access to AIS data very quickly and totally free of charge.
 
-En outre, il est possible d'utiliser des alternativse en passant par les canaux de communication VHF afin de s'affranchir de la porté des récepteur AIS terrestre si on suit les bateaux en mer. 
+Furthermore, it is possible to use alternatives by going through VHF communication channels to overcome the range of terrestrial AIS receivers if tracking boats at sea.
 
-### Récupération des données AIS 📥
+### AIS Data Retrieval 📥
 
-Pour récupérer et traiter les données AIS ainsi que gérer l'automatisation de cette tâche, deux fichiers ont été créés :
+To retrieve and process AIS data as well as manage the automation of this task, two files have been created:
 
-> `tracker.ipynb` : ce notebook permet de visualiser la méthode de récupération et de traitement des données AIS. Il permet également de tester le bon fonctionnement de cette méthode et de visualiser les résultats obtenus.
+> `tracker.ipynb`: This notebook allows for the visualization of the method for retrieving and processing AIS data. It also allows for testing the functionality of this method and viewing the obtained results.
 
->`tracker_tools.py` : ce fichier, quant à lui, défini (entre autres) la classe DataBase qui permet de récupérer et de traiter les données AIS en faisant le lien avec la base de données définissant la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/). Il permet également de gérer l'automatisation de cette tâche.
+> `tracker_tools.py`: This file defines (among other things) the DataBase class, which retrieves and processes AIS data by linking with the database defining the fleet of the [**Classic Yacht Club**](https://www.yachtclubclassique.com/). It also manages the automation of this task.
 
-### Génération de la carte interactive 🗺️
+### Interactive Map Generation 🗺️
 
-Pour générer la carte interactive, j'ai utilisé la librairie [**Folium**](https://python-visualization.github.io/folium/). Cette librairie permet de générer des cartes interactives en utilisant les données de [**OpenStreetMap**](https://www.openstreetmap.org/). J'y ai ensuite ajouté les données AIS des bateaux et quelques extras (marqueurs, popup, etc.).
+To generate the interactive map, I used the [**Folium**](https://python-visualization.github.io/folium/) library. This library allows for the creation of interactive maps using data from [**OpenStreetMap**](https://www.openstreetmap.org/). I then added the AIS data of the boats and some extras (markers, popups, etc.).
 
-Vous trouverez dans le fichier `tracker_tools.py` la classe `TrackerServer` qui permet de générer la carte interactive via la méthode `generate_html_()`.
+You will find in the file `tracker_tools.py` the `TrackerServer` class that allows generating the interactive map via the `generate_html_()` method.
 
-## 📌 Résultats
+## 📌 Results
 
-Le résultat du programme est une carte interactive qui permet de suivre les bateaux de la flotte du [**Yacht Club Classique**](https://www.yachtclubclassique.com/). Le fichier `index.html` est la carte interactive générée par le programme. Vous pouvez également la retrouver à l'adresse suivante :
+The result of the program is an interactive map that allows tracking the boats of the [**Classic Yacht Club**](https://www.yachtclubclassique.com/) fleet. The `index.html` file is the interactive map generated by the program. You can also find it at the following address:
 
 > [*https://pierre-cau.github.io/FleetyTracker*](https://pierre-cau.github.io/FleetyTracker/)
 
-
-[![Exemple d'utilisation de la carte](https://github.com/pierre-cau/YCC_fleet_tracker/blob/main/Tracker_fleet_YCC/images/play_tuto.png)](https://youtu.be/e5CfFEt8en8)
+[![Example of using the map](https://github.com/pierre-cau/YCC_fleet_tracker/blob/main/Tracker_fleet_YCC/images/play_tuto.png)](https://youtu.be/e5CfFEt8en8)
 
 ## 📝 Notes
 
-Ce programme est un premier jet. Il est donc susceptible d'évoluer dans le temps. Il est également possible que des bugs soient présents. N'hésitez pas à me faire part de vos remarques et suggestions.
+This program is a first draft. Therefore, it may evolve over time. It is also possible that there are bugs present. Please do not hesitate to share your comments and suggestions.
 
-## 🔗 Quelques liens utiles...
+## 🔗 Some Useful Links...
 
 
->* [**Yacht Club Classique**](https://www.yachtclubclassique.com/)
+>* [**Classic Yacht Club**](https://www.yachtclubclassique.com/)
 >* [**ANFR**](https://www.anfr.fr/)
 >* [**SHOM**](https://www.shom.fr/)
->* [**GéoAPI du SHOM**](https://geoapi.fr/shomgt/tile.php)
+>* [**SHOM GeoAPI**](https://geoapi.fr/shomgt/tile.php)
 >* [**AIS Hub**](https://www.aishub.net/)
 >* [**MarineTraffic**](https://www.marinetraffic.com/)
 >* [**OpenStreetMap**](https://www.openstreetmap.org/)
 >* [**Folium**](https://python-visualization.github.io/folium/)
->* [**Wikipedia AIS**](https://fr.wikipedia.org/wiki/Automatic_Identification_System)
->* [**Wikipedia MMSI**](https://fr.wikipedia.org/wiki/Maritime_Mobile_Service_Identity)
->* [**Wikipedia GPS**](https://fr.wikipedia.org/wiki/Syst%C3%A8me_de_positionnement_par_satellites)
+>* [**Wikipedia AIS**](https://en.wikipedia.org/wiki/Automatic_identification_system)
+>* [**Wikipedia MMSI**](https://en.wikipedia.org/wiki/Maritime_Mobile_Service_Identity)
+>* [**Wikipedia GPS**](https://en.wikipedia.org/wiki/Global_Positioning_System)
 
 ---
 ## Contact 📱
