@@ -3,9 +3,9 @@
   <img src="Tracker_fleet_YCC\images\Logo_FleetyTrack\sansBG\Logo_fleetytrack_txt_H_sansBG.svg" alt="logo" width="auto" height="80" display="block"/>
 </div>
 
-# Tracker de flotte 🔎
+# Fleet Tracker 🔎
 
-###### Tu te demandes comment traquer ta flotte❔...Tu es au bon endroit🔥!
+###### Wondering how to track your fleet❔...You're in the right place🔥!
 
 <div align="center">
   <img src="Tracker_fleet_YCC\images\Logo_FleetyTrack\sansBG\Logo_fleetytrack_sansBG.svg" alt="logo" width="200" height="200" display="block"/> 
@@ -16,15 +16,18 @@
   <img src="https://www.svgrepo.com/show/349419/javascript.svg" alt="js" width="30" height="30"/>
   <img src="https://stormglass.io/wp-content/uploads/2019/05/Stormglass-Circle-1400.svg" height="30" alt="storm-glass">
   <img src="https://www.svgrepo.com/show/452091/python.svg" height="30" alt="python">
-  <img src="https://python-visualization.github.io/folium/_images/folium_logo.jpg" height="30" alt="folium">
   <img src="https://cdn.svgporn.com/logos/leaflet.svg" height="30" alt="leaflet-maps">
 </p>
 </div>
 
 <div height="30" align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue" alt="version">
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="license">
-  <img src="https://img.shields.io/badge/Status-En%20cours-orange" alt="status">
+  <a href="https://github.com/pierre-cau/Sail-Tracker">
+    <img src="https://img.shields.io/badge/Version-1.0.0-blue" alt="version">
+  </a>
+  <a href="https://github.com/pierre-cau/Sail-Tracker/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/pierre-cau/Sail-Tracker" alt="license">
+  </a>
+  <img src="https://img.shields.io/badge/Status-In%20Progress-orange" alt="status">
 </div>
 
 ## Ownership 📝
