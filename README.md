@@ -3,7 +3,7 @@
   <img src="Tracker_fleet_YCC\images\Logo_FleetyTrack\sansBG\Logo_fleetytrack_txt_H_sansBG.svg" alt="logo" width="auto" height="80" display="block"/>
 </div>
 
-# Fleety Tracker 🔎
+# Fleet Tracker 🔎
 
 ###### Wondering how to track your fleet❔...You're in the right place🔥!
 
